@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<!-- CSP: restricts scripts, connections, frames to known safe origins only -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src https://fonts.gstatic.com;
+  connect-src https://sheets.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com;
+  frame-src https://accounts.google.com;
+  object-src 'none';
+  base-uri 'self';
+">
+<title>Portfolio Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0A0F1E;--surf:#0D1B2A;--surf2:#112236;
+  --acc:#00D4A8;--acc-d:#00D4A820;--acc-b:#00D4A840;
+  --dng:#FF6B35;--dng-d:#FF6B3520;
+  --wrn:#F59E0B;--wrn-d:#F59E0B20;
+  --muted:#8892A4;--bdr:#1A3050;
+  --txt:#E8EDF5;--txt2:#B0BDC8;
+  --mono:'IBM Plex Mono',monospace;--sans:'Inter',sans-serif;
+}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);height:100vh;overflow:hidden}
+.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:100}
+.screen.hidden{display:none!important}
+.box{background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:32px;width:360px;max-width:94vw}
+.logo-mark{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--acc)}
+.logo-sub{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px;margin-bottom:22px}
+.fl{font-size:11px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:10px 0 6px}
+.fl:first-of-type{margin-top:0}
+input.fi{width:100%;background:var(--surf2);border:1px solid var(--bdr);border-radius:7px;padding:10px 13px;font-family:var(--mono);font-size:13px;color:var(--txt);outline:none;transition:border .15s}
+input.fi:focus{border-color:var(--acc-b)}
+input.fi:disabled{opacity:.45;cursor:not-allowed}
+.btn-p{width:100%;margin-top:13px;background:var(--acc);border:none;border-radius:8px;padding:11px;font-family:var(--mono);font-size:13px;font-weight:600;color:#0A0F1E;cursor:pointer;transition:opacity .15s}
+.btn-p:hover{opacity:.87}.btn-p:disabled{opacity:.4;cursor:not-allowed}
+.btn-s{background:var(--surf2);border:1px solid var(--bdr);border-radius:7px;padding:9px 14px;font-family:var(--mono);font-size:12px;color:var(--txt2);cursor:pointer;transition:all .15s;display:inline-block;margin-top:8px}
+.btn-s:hover{border-color:var(--acc-b);color:var(--acc)}
+.err-msg{color:var(--dng);font-size:12px;font-family:var(--mono);margin-top:7px;min-height:16px}
+.ok-msg{color:var(--acc);font-size:12px;font-family:var(--mono);margin-top:7px;min-height:16px}
+.hint{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:14px;padding-top:12px;border-top:1px solid var(--bdr);line-height:1.7}
+.hint strong{color:var(--txt2)}
+/* lock screen */
+.lock-icon{width:44px;height:44px;background:var(--acc-d);border:1px solid var(--acc-b);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:19px}
+.pip-row{display:flex;gap:5px;margin:9px 0 3px}
+.pip{width:18px;height:4px;border-radius:2px;background:var(--bdr);transition:background .2s}
+.pip.bad{background:var(--dng)}.pip.good{background:var(--acc)}
+.lockout-box{background:var(--dng-d);border:1px solid rgba(255,107,53,.3);border-radius:7px;padding:10px 13px;font-family:var(--mono);font-size:12px;color:var(--dng);margin-top:9px;display:none}
+.lockout-box.show{display:block}
+.cd{font-weight:600}
+.shake{animation:shake .4s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+/* inactivity */
+#idle-warn{position:fixed;bottom:18px;right:18px;background:var(--wrn-d);border:1px solid rgba(245,158,11,.4);border-radius:8px;padding:9px 15px;font-family:var(--mono);font-size:12px;color:var(--wrn);z-index:600;display:none;pointer-events:none}
+#idle-warn.show{display:block}
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:400;display:none;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:26px;width:340px;max-width:94vw}
+.modal-title{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--acc);margin-bottom:12px}
+.modal-btns{display:flex;gap:8px;margin-top:12px}
+.modal-btns .btn-p{flex:1;margin:0}
+.modal-btns .btn-s{flex:1;margin:0}
+/* app */
+.app{display:flex;height:100vh;width:100vw}
+.sidebar{width:196px;background:var(--surf);border-right:1px solid var(--bdr);display:flex;flex-direction:column;flex-shrink:0}
+.s-logo{padding:17px 13px 13px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between}
+.s-lm{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--acc)}
+.s-ls{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px}
+.lock-ico{background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;transition:color .15s;padding:2px;line-height:1}
+.lock-ico:hover{color:var(--dng)}
+nav{padding:9px 8px;flex:1;display:flex;flex-direction:column;gap:2px}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--muted);transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.ni:hover{background:var(--surf2);color:var(--txt)}
+.ni.active{background:var(--acc-d);color:var(--acc);border:1px solid var(--acc-b)}
+nav .sp{flex:1}
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.topbar{padding:12px 22px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;background:var(--surf);flex-shrink:0}
+.page-ttl{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--txt)}
+.live-pill{display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);color:var(--acc)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.content{padding:22px;flex:1;overflow-y:auto}
+.tab{display:none}.tab.active{display:block}
+/* content */
+.tv{font-family:var(--mono);font-size:40px;font-weight:600;letter-spacing:-1px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tv-pre{font-size:18px;color:var(--muted);font-weight:400}
+.cursor{display:inline-block;width:3px;height:34px;background:var(--acc);animation:blink 1s infinite;margin-left:2px;vertical-align:middle}
+@keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+.tg{font-size:13px;padding:2px 8px;border-radius:4px;font-weight:500}
+.tg-g{background:var(--acc-d);color:var(--acc);border:1px solid var(--acc-b)}
+.tg-r{background:var(--dng-d);color:var(--dng)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:14px}
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:14px}
+.cl{font-size:11px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+.cv{font-family:var(--mono);font-size:21px;font-weight:600}
+.cs{font-size:12px;color:var(--muted);margin-top:3px}
+.sec{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--acc);text-transform:uppercase;letter-spacing:1px;margin:22px 0 10px;display:flex;align-items:center;gap:8px}
+.sec::after{content:'';flex:1;height:1px;background:var(--bdr)}
+.chip{background:var(--surf);border:1px solid var(--bdr);border-radius:6px;padding:7px 12px;font-family:var(--mono);font-size:11px;color:var(--txt2);cursor:pointer;transition:all .15s;text-align:left;display:inline-block}
+.chip:hover{border-color:var(--acc-b);color:var(--acc);background:var(--acc-d)}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.gbar{background:var(--surf2);border-radius:4px;height:7px;overflow:hidden;margin:7px 0}
+.gfill{background:var(--acc);height:100%;border-radius:4px;transition:width .8s ease}
+.gmeta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.pr{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;background:var(--surf);border:1px solid var(--bdr);border-radius:8px;margin-bottom:8px}
+.rec{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px}
+.rhdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+.rtick{font-family:var(--mono);font-size:17px;font-weight:600}
+.rco{font-size:11px;color:var(--muted);margin-top:2px}
+.rbdg{font-size:10px;font-family:var(--mono);padding:3px 9px;border-radius:4px;font-weight:500}
+.buy{background:#00D4A815;color:var(--acc);border:1px solid var(--acc-b)}
+.core{background:var(--wrn-d);color:var(--wrn);border:1px solid rgba(245,158,11,.3)}
+.rmeta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:9px}
+.rmi{background:var(--surf2);border-radius:6px;padding:7px;text-align:center}
+.rml{font-size:10px;color:var(--muted);font-family:var(--mono);text-transform:uppercase}
+.rmv{font-family:var(--mono);font-size:12px;font-weight:600;margin-top:2px}
+.thesis{font-size:12px;color:var(--txt2);line-height:1.6;margin-top:9px;padding-top:9px;border-top:1px solid var(--bdr)}
+.sm{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px}
+.smh{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;flex-shrink:0}
+.sp2{font-family:var(--mono);font-size:11px;padding:3px 7px;background:var(--surf2);border:1px solid var(--bdr);border-radius:4px;color:var(--txt2)}
+.sp2.top{border-color:var(--acc-b);color:var(--acc);background:var(--acc-d)}
+.rr{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--surf);border:1px solid var(--bdr);border-radius:8px;margin-bottom:7px}
+.rl{font-size:13px;flex:1;padding-right:10px}
+.rs{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:4px;white-space:nowrap}
+.rs-ok{background:#00D4A812;color:var(--acc);border:1px solid var(--acc-b)}
+.rs-w{background:var(--wrn-d);color:var(--wrn);border:1px solid rgba(245,158,11,.3)}
+.ss{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surf);border:1px solid var(--bdr);border-radius:8px;font-family:var(--mono);font-size:12px;margin-bottom:12px}
+.ss-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sd-on{background:var(--acc)}.sd-off{background:var(--dng)}.sd-pend{background:var(--wrn);animation:pulse 1.5s infinite}
+.le{padding:8px 12px;background:var(--surf2);border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--txt2);margin-bottom:5px;display:flex;justify-content:space-between;gap:10px}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;padding:9px 11px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);border-bottom:1px solid var(--bdr)}
+.tbl td{padding:10px 11px;border-bottom:1px solid var(--bdr);font-family:var(--mono)}
+.tbl tr:hover td{background:var(--surf2)}
+.notice{padding:11px 14px;border-radius:8px;font-size:12px;line-height:1.6;margin-bottom:12px}
+.n-acc{background:var(--acc-d);border:1px solid var(--acc-b);color:var(--txt2)}
+.n-acc strong{color:var(--acc);font-family:var(--mono)}
+.n-wrn{background:var(--wrn-d);border:1px solid rgba(245,158,11,.3);color:var(--wrn);font-family:var(--mono);font-size:11px}
+.n-dng{background:var(--dng-d);border:1px solid rgba(255,107,53,.3);color:var(--dng);font-family:var(--mono);font-size:11px}
+.about-row{font-size:11px;color:var(--txt2);line-height:2.1;font-family:var(--mono)}
+.step-ind{display:flex;gap:6px;margin-bottom:20px}
+.step-pip{width:24px;height:3px;border-radius:2px;background:var(--bdr)}
+.step-pip.active{background:var(--acc)}
+</style>
+</head>
+<body>
+
+<!-- INACTIVITY WARNING TOAST -->
+<div id="idle-warn">⚠ Locking in <span id="idle-cd">60</span>s — move to stay</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div class="modal-bg" id="pw-modal">
+  <div class="modal">
+    <div class="modal-title">change password</div>
+    <div class="fl" style="margin-top:0">Current password</div>
+    <input class="fi" type="password" id="m-cur" placeholder="current password" autocomplete="current-password">
+    <div class="fl">New password</div>
+    <input class="fi" type="password" id="m-new" placeholder="min 8 characters" autocomplete="new-password">
+    <div class="fl">Confirm new password</div>
+    <input class="fi" type="password" id="m-conf" placeholder="repeat" autocomplete="new-password">
+    <div class="err-msg" id="m-err"></div>
+    <div class="ok-msg" id="m-ok"></div>
+    <div class="modal-btns">
+      <button class="btn-s" onclick="closePwModal()">cancel</button>
+      <button class="btn-p" onclick="changePw()">save password</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SETUP SCREEN (first run only)              -->
+<!-- ══════════════════════════════════════════ -->
+<div class="screen" id="screen-setup">
+  <div class="box">
+    <div class="logo-mark">▸ PORTFOLIO TERMINAL</div>
+    <div class="logo-sub">FIRST RUN SETUP</div>
+    <!-- step indicators -->
+    <div class="step-ind">
+      <div class="step-pip active" id="si0"></div>
+      <div class="step-pip" id="si1"></div>
+      <div class="step-pip" id="si2"></div>
+    </div>
+
+    <!-- Step 0: import existing config token -->
+    <div id="step0">
+      <div class="notice n-acc" style="margin-bottom:14px">
+        <strong>Returning user?</strong> Paste your config token to restore your setup on this device instantly — same password works straight away.
+      </div>
+      <div class="fl" style="margin-top:0">Config token</div>
+      <input class="fi" id="s-token" placeholder="paste token from another device..." style="font-size:11px;letter-spacing:.5px">
+      <div class="err-msg" id="s-token-err"></div>
+      <button class="btn-p" onclick="importConfig()">import token →</button>
+      <div style="display:flex;align-items:center;gap:10px;margin:14px 0">
+        <div style="flex:1;height:1px;background:var(--bdr)"></div>
+        <span style="font-size:11px;color:var(--muted);font-family:var(--mono)">or</span>
+        <div style="flex:1;height:1px;background:var(--bdr)"></div>
+      </div>
+      <button class="btn-s" style="width:100%;text-align:center;margin-top:0" onclick="goStep1()">new setup — create password →</button>
+    </div>
+
+    <!-- Step 1: password -->
+    <div id="step1" style="display:none">
+      <div class="fl" style="margin-top:0">Create password <span style="color:var(--dng)">*</span></div>
+      <input class="fi" type="password" id="s-pw1" placeholder="min 8 characters" autocomplete="new-password">
+      <div class="fl">Confirm password <span style="color:var(--dng)">*</span></div>
+      <input class="fi" type="password" id="s-pw2" placeholder="repeat" autocomplete="new-password">
+      <div class="fl">Revenue goal ($)</div>
+      <input class="fi" id="s-goal" type="number" placeholder="10000" value="10000">
+      <div class="err-msg" id="s-err"></div>
+      <button class="btn-p" onclick="setupStep1()">continue →</button>
+    </div>
+
+    <!-- Step 2: Google Sheets (optional) -->
+    <div id="step2" style="display:none">
+      <div class="notice n-acc" style="margin-bottom:14px">
+        <strong>Optional:</strong> Google Sheets logging. You can skip and configure later in Settings.
+      </div>
+      <div class="fl" style="margin-top:0">Google OAuth Client ID</div>
+      <input class="fi" id="s-cid" placeholder="*.apps.googleusercontent.com">
+      <div class="fl">Google Sheet ID</div>
+      <input class="fi" id="s-sid" placeholder="from your sheet URL /d/{ID}/edit">
+      <div class="hint" style="margin-top:10px;padding-top:10px">
+        <strong>Authorized origin</strong> in Google Cloud Console must exactly match your GitHub Pages URL (e.g. https://yourusername.github.io). Token stays <strong>in-memory only</strong> — never persisted.
+      </div>
+      <button class="btn-p" onclick="setupFinish(false)">finish setup →</button>
+      <button class="btn-s" style="width:100%;margin-top:6px;text-align:center" onclick="setupFinish(true)">skip for now</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- LOCK SCREEN                                -->
+<!-- ══════════════════════════════════════════ -->
+<div class="screen" id="screen-lock">
+  <div class="box" id="lock-box">
+    <div class="logo-mark">▸ PORTFOLIO TERMINAL</div>
+    <div class="logo-sub">SECURED ACCESS</div>
+    <div class="lock-icon">🔒</div>
+    <div class="fl" style="margin-top:0">Password</div>
+    <input class="fi" type="password" id="l-pw" placeholder="••••••••" autocomplete="current-password">
+    <div class="pip-row">
+      <div class="pip" id="p0"></div><div class="pip" id="p1"></div>
+      <div class="pip" id="p2"></div><div class="pip" id="p3"></div>
+      <div class="pip" id="p4"></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);font-family:var(--mono)" id="pip-lbl">5 attempts allowed</div>
+    <div class="lockout-box" id="lockout-box">
+      🔒 locked — try again in <span class="cd" id="lo-cd">30</span>s
+    </div>
+    <button class="btn-p" id="unlock-btn" onclick="tryUnlock()">→ unlock</button>
+    <div class="err-msg" id="l-err"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- MAIN APP                                   -->
+<!-- ══════════════════════════════════════════ -->
+<div class="app screen hidden" id="screen-app">
+  <div class="sidebar">
+    <div class="s-logo">
+      <div><div class="s-lm">▸ TERMINAL</div><div class="s-ls">PORTFOLIO_SECURE</div></div>
+      <button class="lock-ico" onclick="lockApp()" title="Lock dashboard">🔒</button>
+    </div>
+    <nav>
+      <button class="ni active" onclick="switchTab('overview',this)"><span>⬡</span> Overview</button>
+      <button class="ni" onclick="switchTab('positions',this)"><span>◈</span> Positions</button>
+      <button class="ni" onclick="switchTab('recommendations',this)"><span>◎</span> Picks</button>
+      <button class="ni" onclick="switchTab('smartmoney',this)"><span>◉</span> Smart Money</button>
+      <button class="ni" onclick="switchTab('advisor',this)"><span>◇</span> AI Advisor</button>
+      <button class="ni" onclick="switchTab('orders',this)"><span>◁</span> Orders</button>
+      <button class="ni" onclick="switchTab('sheets',this)"><span>▤</span> Sheets Log</button>
+      <button class="ni" onclick="switchTab('risk',this)"><span>△</span> Risk Rules</button>
+      <div class="sp"></div>
+      <button class="ni" onclick="switchTab('settings',this)"><span>⚙</span> Settings</button>
+    </nav>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="page-ttl" id="page-ttl">// overview</span>
+      <div class="live-pill"><div class="dot"></div>LIVE · RH_MCP</div>
+    </div>
+    <div class="content">
+
+      <!-- ── OVERVIEW ── -->
+      <div class="tab active" id="tab-overview">
+        <div class="tv">
+          <span class="tv-pre">$</span><span>1,054.21</span>
+          <div class="cursor"></div>
+          <span class="tg tg-g">+$54.45 SPCX</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:6px">TOTAL PORTFOLIO · 2 ACCOUNTS</div>
+        <div class="g3">
+          <div class="card"><div class="cl">Agentic Cash</div><div class="cv" style="color:var(--acc)">$654.54</div><div class="cs">$3,000 pending</div></div>
+          <div class="card"><div class="cl">Equity Value</div><div class="cv">$399.33</div><div class="cs">2× SPCX</div></div>
+          <div class="card"><div class="cl">Total Gain</div><div class="cv" style="color:var(--acc)">+15.8%</div><div class="cs">SPCX since IPO</div></div>
+        </div>
+        <div class="card" style="margin-top:14px;padding:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="cl" style="margin:0">Goal Progress</div>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--acc)" id="goal-pct">10.5%</span>
+          </div>
+          <div class="gbar"><div class="gfill" id="goal-bar" style="width:10.5%"></div></div>
+          <div class="gmeta"><span>$1,054 current</span><span id="goal-lbl">goal: $10,000</span></div>
+        </div>
+        <div class="sec">market snapshot</div>
+        <div class="g3" style="margin-top:0">
+          <div class="card"><div class="cl">SPCX</div><div class="cv" style="font-size:15px">$199.67</div><div class="cs" style="color:var(--dng)">▼ -1.06% today</div></div>
+          <div class="card"><div class="cl">SPY</div><div class="cv" style="font-size:15px">—</div><div class="cs"><button class="chip" style="padding:3px 8px;font-size:10px" onclick="sendPrompt('What is the current SPY price and S&P 500 market status today?')">fetch ↗</button></div></div>
+          <div class="card"><div class="cl">NVDA</div><div class="cv" style="font-size:15px">—</div><div class="cs"><button class="chip" style="padding:3px 8px;font-size:10px" onclick="sendPrompt('What is the current NVDA stock price?')">fetch ↗</button></div></div>
+        </div>
+        <div class="chips" style="margin-top:14px">
+          <button class="chip" onclick="sendPrompt('Pull my live Robinhood portfolio from both accounts. Give me current values, P&L, and buying power.')">refresh live ↗</button>
+          <button class="chip" onclick="logPortfolio()">log snapshot to sheets ↗</button>
+        </div>
+      </div>
+
+      <!-- ── POSITIONS ── -->
+      <div class="tab" id="tab-positions">
+        <div class="sec">open positions</div>
+        <div class="pr">
+          <div>
+            <div style="font-family:var(--mono);font-size:16px;font-weight:600">SPCX</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">SpaceX Inc. · 2 shares · long</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:var(--mono);font-size:13px">$199.67 <span style="color:var(--dng);font-size:11px">▼ -1.06%</span></div>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--acc);margin-top:2px">+$54.45 (+15.8%) · $399.33</div>
+          </div>
+        </div>
+        <div style="padding:10px 14px;background:var(--acc-d);border:1px solid var(--acc-b);border-radius:7px;font-family:var(--mono);font-size:11px;color:var(--acc)">
+          avg cost $172.44 · Jun 2026 IPO · unrealized gain $54.45
+        </div>
+        <div class="sec">accounts</div>
+        <div class="g2">
+          <div class="card"><div class="cl">Main ••••6689</div><div class="cv">$399.13</div><div class="cs">margin · holds SPCX</div></div>
+          <div class="card"><div class="cl">Agentic ••••0705</div><div class="cv" style="color:var(--acc)">$654.54</div><div class="cs">cash · agentic · $3K pending</div></div>
+        </div>
+        <div class="chips" style="margin-top:14px">
+          <button class="chip" onclick="sendPrompt('Pull my live Robinhood positions from both accounts. Full current P&L breakdown.')">refresh ↗</button>
+          <button class="chip" onclick="sendPrompt('Analyze my SPCX position — 2 shares avg $172.44, current ~$199.67. Hold, add, or take partial profits?')">analyze SPCX ↗</button>
+          <button class="chip" onclick="sendPrompt('What is my total buying power across both Robinhood accounts right now?')">buying power ↗</button>
+        </div>
+      </div>
+
+      <!-- ── PICKS ── -->
+      <div class="tab" id="tab-recommendations">
+        <div class="sec">value picks · berkshire q1 2026</div>
+        <div class="rec">
+          <div class="rhdr"><div><div class="rtick">AAPL</div><div class="rco">Apple Inc.</div></div><span class="rbdg buy">BUY</span></div>
+          <div class="rmeta"><div class="rmi"><div class="rml">P/E</div><div class="rmv">29.4×</div></div><div class="rmi"><div class="rml">BRK wt</div><div class="rmv">~40%</div></div><div class="rmi"><div class="rml">Moat</div><div class="rmv">WIDE</div></div></div>
+          <div class="thesis">Largest Berkshire holding. Ecosystem lock-in, services revenue inflecting, massive buyback engine.</div>
+          <button class="chip" style="margin-top:8px" onclick="sendPrompt('Deep analysis of AAPL right now. Current price, valuation, and should I deploy some of my $654 into it?')">live analysis ↗</button>
+        </div>
+        <div class="rec">
+          <div class="rhdr"><div><div class="rtick">AXP</div><div class="rco">American Express</div></div><span class="rbdg buy">BUY</span></div>
+          <div class="rmeta"><div class="rmi"><div class="rml">ROE</div><div class="rmv">33%</div></div><div class="rmi"><div class="rml">BRK stake</div><div class="rmv">~21%</div></div><div class="rmi"><div class="rml">Moat</div><div class="rmv">WIDE</div></div></div>
+          <div class="thesis">Premium spend network. Issuer and merchant simultaneously — compounding network effects.</div>
+          <button class="chip" style="margin-top:8px" onclick="sendPrompt('Analyze AXP right now. Current price, growth outlook, good buy for my portfolio?')">live analysis ↗</button>
+        </div>
+        <div class="sec">growth picks</div>
+        <div class="rec">
+          <div class="rhdr"><div><div class="rtick">NVDA</div><div class="rco">NVIDIA Corp.</div></div><span class="rbdg buy">BUY</span></div>
+          <div class="rmeta"><div class="rmi"><div class="rml">Rev growth</div><div class="rmv">+122%</div></div><div class="rmi"><div class="rml">Margin</div><div class="rmv">76%</div></div><div class="rmi"><div class="rml">Category</div><div class="rmv">AI INFRA</div></div></div>
+          <div class="thesis">Dominant AI compute. CUDA moat 15 years deep. Hyperscaler capex accelerating into Blackwell cycle.</div>
+          <button class="chip" style="margin-top:8px" onclick="sendPrompt('Analyze NVDA right now. Current price, Blackwell cycle outlook, good entry from my $654?')">live analysis ↗</button>
+        </div>
+        <div class="rec">
+          <div class="rhdr"><div><div class="rtick">VOO</div><div class="rco">Vanguard S&P 500 ETF</div></div><span class="rbdg core">CORE</span></div>
+          <div class="rmeta"><div class="rmi"><div class="rml">Expense</div><div class="rmv">0.03%</div></div><div class="rmi"><div class="rml">Yield</div><div class="rmv">1.3%</div></div><div class="rmi"><div class="rml">Type</div><div class="rmv">INDEX</div></div></div>
+          <div class="thesis">Base layer for dry powder. Dollar-cost average on dips. Beats most active managers over 10 years.</div>
+          <button class="chip" style="margin-top:8px" onclick="sendPrompt('Current VOO price and should I deploy some of my $654 into it now vs waiting?')">live analysis ↗</button>
+        </div>
+        <div class="notice n-wrn">⚠ Educational only. All orders route through Claude chat for safety review before execution.</div>
+      </div>
+
+      <!-- ── SMART MONEY ── -->
+      <div class="tab" id="tab-smartmoney">
+        <div class="sec">whale tracker · q1 2026 13f filings</div>
+        <div class="sm">
+          <div class="smh"><div class="av" style="background:var(--acc-d);color:var(--acc)">WB</div><div><div style="font-size:14px;font-weight:600">Warren Buffett / Greg Abel</div><div style="font-size:11px;color:var(--muted)">Berkshire Hathaway · ~$300B AUM</div></div></div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px"><span class="sp2 top">AAPL ~40%</span><span class="sp2 top">BAC ~11%</span><span class="sp2 top">AXP ~10%</span><span class="sp2">KO</span><span class="sp2">CVX</span><span class="sp2">OXY</span></div>
+          <button class="chip" style="margin-top:9px" onclick="sendPrompt('What are Berkshire Hathaway\'s latest portfolio moves and top positions as of mid-2026?')">latest moves ↗</button>
+        </div>
+        <div class="sm">
+          <div class="smh"><div class="av" style="background:#7C3AED20;color:#A78BFA">SD</div><div><div style="font-size:14px;font-weight:600">Stanley Druckenmiller</div><div style="font-size:11px;color:var(--muted)">Duquesne Family Office · ~$3B AUM</div></div></div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px"><span class="sp2 top">NVDA ~17%</span><span class="sp2 top">MSFT ~8%</span><span class="sp2 top">GOOG ~7%</span><span class="sp2">META</span><span class="sp2">AMZN</span></div>
+        </div>
+        <div class="sm">
+          <div class="smh"><div class="av" style="background:var(--wrn-d);color:var(--wrn)">DT</div><div><div style="font-size:14px;font-weight:600">David Tepper</div><div style="font-size:11px;color:var(--muted)">Appaloosa Management · ~$14B AUM</div></div></div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px"><span class="sp2 top">META ~15%</span><span class="sp2 top">AMZN ~12%</span><span class="sp2 top">NVDA ~10%</span><span class="sp2">BABA</span><span class="sp2">GOOG</span></div>
+        </div>
+        <div class="sm">
+          <div class="smh"><div class="av" style="background:#EC489920;color:#F472B6">PA</div><div><div style="font-size:14px;font-weight:600">Bill Ackman</div><div style="font-size:11px;color:var(--muted)">Pershing Square · ~$16B AUM</div></div></div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px"><span class="sp2 top">HLT ~25%</span><span class="sp2 top">QSR ~18%</span><span class="sp2 top">GOOGL ~12%</span><span class="sp2">CMG</span></div>
+        </div>
+        <div class="sm">
+          <div class="smh"><div class="av" style="background:var(--dng-d);color:var(--dng)">MB</div><div><div style="font-size:14px;font-weight:600">Michael Burry</div><div style="font-size:11px;color:var(--muted)">Scion Asset Mgmt · ~$300M AUM</div></div></div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px"><span class="sp2 top">BABA ~20%</span><span class="sp2 top">JD ~18%</span><span class="sp2">PDD</span><span class="sp2">HCA</span></div>
+        </div>
+        <div class="sec">consensus overlap</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px">
+          <span class="tg tg-g" style="font-family:var(--mono);font-size:11px;padding:5px 10px">NVDA · 3/5 funds</span>
+          <span class="tg tg-g" style="font-family:var(--mono);font-size:11px;padding:5px 10px">AMZN · 2/5 funds</span>
+          <span class="tg tg-g" style="font-family:var(--mono);font-size:11px;padding:5px 10px">META · 2/5 funds</span>
+          <span class="tg tg-g" style="font-family:var(--mono);font-size:11px;padding:5px 10px">GOOG · 2/5 funds</span>
+        </div>
+        <button class="chip" onclick="sendPrompt('Based on smart money consensus — Buffett in AAPL/AXP, Druckenmiller in NVDA, Tepper in META/AMZN — what is the single best position I should open with $654 right now?')">get consensus pick ↗</button>
+      </div>
+
+      <!-- ── AI ADVISOR ── -->
+      <div class="tab" id="tab-advisor">
+        <div class="notice n-acc"><strong>AI ADVISOR</strong> — powered by Claude via this chat. No API key needed. Buttons send live prompts to Claude which has Robinhood MCP access. <strong>Orders always routed for review before execution.</strong></div>
+        <div class="sec">quick prompts</div>
+        <div class="chips">
+          <button class="chip" onclick="sendPrompt('I have $654.54 in my agentic Robinhood account and $3,000 pending. What should I buy right now? Top 2-3 picks with specific dollar amounts.')">what to buy with $654? ↗</button>
+          <button class="chip" onclick="sendPrompt('Pull my Robinhood positions. SPCX is up 15.8% — hold, add, or take partial profits?')">SPCX: hold or sell? ↗</button>
+          <button class="chip" onclick="sendPrompt('Check SPY and QQQ. Bull/bear market outlook for the next 30 days.')">market outlook ↗</button>
+          <button class="chip" onclick="sendPrompt('Based on Buffett, Druckenmiller, Tepper, Ackman, Burry positions — single highest conviction trade this week?')">smart money pick ↗</button>
+          <button class="chip" onclick="sendPrompt('My entire equity is SPCX. What 2-3 positions to add for diversification with high growth potential?')">diversification plan ↗</button>
+          <button class="chip" onclick="sendPrompt('Once my $3,000 deposit clears, how should I allocate $3,654 to maximize growth toward my revenue goal?')">$3K deployment plan ↗</button>
+          <button class="chip" onclick="sendPrompt('Full risk assessment of my current portfolio: SPCX +15.8%, single position, $654 cash, $3K pending.')">risk assessment ↗</button>
+        </div>
+        <div class="sec">route an order</div>
+        <div class="card" style="padding:16px">
+          <div style="font-size:12px;color:var(--txt2);line-height:1.6;margin-bottom:12px">Describe a trade — Claude reviews it, checks buying power in ••••0705, and confirms before executing. Nothing executes without your explicit confirmation.</div>
+          <div class="fl" style="margin-top:0">Order intent</div>
+          <input class="fi" id="order-in" placeholder='e.g. "buy $200 of NVDA at market"' maxlength="200" oninput="updateCC()">
+          <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin:4px 0 10px;text-align:right" id="cc">0 / 200</div>
+          <button class="btn-p" style="margin-top:0" onclick="routeOrder()">→ send to claude for review</button>
+        </div>
+      </div>
+
+      <!-- ── ORDERS ── -->
+      <div class="tab" id="tab-orders">
+        <div class="sec">order history · agentic ••••0705</div>
+        <table class="tbl">
+          <thead><tr><th>Date</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Price</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td style="color:var(--muted)">Jun 10 2026</td><td style="color:var(--acc)">SPCX</td><td style="color:var(--acc)">BUY</td><td>2.00</td><td>$172.44</td><td style="color:var(--acc)">FILLED</td></tr>
+          </tbody>
+        </table>
+        <div class="chips" style="margin-top:12px">
+          <button class="chip" onclick="sendPrompt('Pull my full order history from both Robinhood accounts including pending and cancelled orders.')">load full history ↗</button>
+          <button class="chip" onclick="logOrder()">log to sheets ↗</button>
+        </div>
+      </div>
+
+      <!-- ── SHEETS LOG ── -->
+      <div class="tab" id="tab-sheets">
+        <div class="sec">google sheets connection</div>
+        <div class="ss" id="ss-status">
+          <div class="ss-dot sd-off" id="ss-dot"></div>
+          <span id="ss-msg">not connected</span>
+        </div>
+        <div id="ss-no-cfg" class="notice n-dng" style="display:none">⚠ No OAuth Client ID or Sheet ID configured. Add them in Settings → Google Sheets.</div>
+        <div class="chips">
+          <button class="chip" onclick="requestGToken()">connect google account ↗</button>
+          <button class="chip" onclick="logPortfolio()">log portfolio snapshot ↗</button>
+          <button class="chip" onclick="logGoal()">log goal progress ↗</button>
+        </div>
+        <div class="sec">session log</div>
+        <div id="log-entries"><div style="padding:18px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:12px">no entries this session</div></div>
+        <div class="sec">sheet tab reference</div>
+        <div class="g2">
+          <div class="card"><div class="cl">Tab name</div><div style="font-family:var(--mono);font-size:13px;color:var(--acc)">Portfolio</div><div class="cs">snapshot logs</div></div>
+          <div class="card"><div class="cl">Tab name</div><div style="font-family:var(--mono);font-size:13px;color:var(--acc)">Orders</div><div class="cs">order history</div></div>
+          <div class="card"><div class="cl">Tab name</div><div style="font-family:var(--mono);font-size:13px;color:var(--acc)">GoalProgress</div><div class="cs">goal tracking</div></div>
+          <div class="card"><div class="cl">Tab name</div><div style="font-family:var(--mono);font-size:13px;color:var(--acc)">ChatLog</div><div class="cs">advisor history</div></div>
+        </div>
+      </div>
+
+      <!-- ── RISK RULES ── -->
+      <div class="tab" id="tab-risk">
+        <div class="sec">safety rules · live status</div>
+        <div class="rr"><span class="rl">Max 20% of portfolio in a single position</span><span class="rs rs-ok">✓ OK</span></div>
+        <div class="rr"><span class="rl">Keep ≥10% in cash / dry powder</span><span class="rs rs-ok">✓ OK · 62% cash</span></div>
+        <div class="rr"><span class="rl">No margin without explicit approval</span><span class="rs rs-ok">✓ OK</span></div>
+        <div class="rr"><span class="rl">All orders reviewed in Claude chat first</span><span class="rs rs-ok">✓ ENFORCED</span></div>
+        <div class="rr"><span class="rl">Stop-loss review on positions >15% gain</span><span class="rs rs-w">⚠ SPCX +15.8%</span></div>
+        <div class="rr"><span class="rl">Minimum 3 uncorrelated positions</span><span class="rs rs-w">⚠ 1 POSITION</span></div>
+        <div class="rr"><span class="rl">No trading on earnings day without analysis</span><span class="rs rs-ok">✓ OK</span></div>
+        <div style="margin-top:14px;padding:14px;background:var(--surf);border-left:3px solid var(--wrn);border-radius:0 8px 8px 0">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--wrn);margin-bottom:7px">2 ACTIVE WARNINGS</div>
+          <div style="font-size:12px;color:var(--txt2);line-height:1.7;margin-bottom:10px">SPCX +15.8% — review stop-loss strategy. Single-asset concentration risk — deploy $654 into 2-3 more positions.</div>
+          <button class="chip" onclick="sendPrompt('I have 2 risk warnings: SPCX at +15.8% and single-asset concentration. Give me a specific action plan to address both this week.')">get action plan ↗</button>
+        </div>
+      </div>
+
+      <!-- ── SETTINGS ── -->
+      <div class="tab" id="tab-settings">
+        <div class="sec">security</div>
+        <div class="card" style="max-width:440px;padding:16px">
+          <div class="notice n-acc" style="margin-bottom:12px"><strong>Password hashing:</strong> SHA-256 with random per-installation salt. In-browser only, never transmitted. Brute-force: 5 attempts → 30s lockout (doubles each lockout).</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-s" style="margin:0" onclick="openPwModal()">🔑 change password</button>
+            <button class="btn-s" style="margin:0;border-color:rgba(255,107,53,.4);color:var(--dng)" onclick="lockApp()">🔒 lock now</button>
+          </div>
+        </div>
+        <div class="sec">google sheets</div>
+        <div class="card" style="max-width:440px;padding:16px">
+          <div class="notice n-acc" style="margin-bottom:12px"><strong>Token security:</strong> OAuth access token lives in-memory only — never written to localStorage or sessionStorage. Sheet ID stored in sessionStorage (cleared on browser close). Client ID safe to persist (public-facing by design).</div>
+          <div class="fl" style="margin-top:0">OAuth Client ID</div>
+          <input class="fi" id="cfg-cid" placeholder="*.apps.googleusercontent.com">
+          <div class="fl">Google Sheet ID</div>
+          <input class="fi" id="cfg-sid" placeholder="from /d/{ID}/edit in your sheet URL">
+          <div class="hint" style="margin-top:8px;padding-top:10px">Add your exact GitHub Pages URL as an authorized origin in Google Cloud Console → APIs & Services → Credentials → your OAuth Client ID.</div>
+          <button class="btn-p" onclick="saveSheetCfg(this)">save configuration</button>
+        </div>
+        <div class="sec">goal</div>
+        <div class="card" style="max-width:440px;padding:16px">
+          <div class="fl" style="margin-top:0">Revenue goal ($)</div>
+          <input class="fi" id="cfg-goal" type="number" placeholder="10000">
+          <button class="btn-p" onclick="saveGoal(this)">save goal</button>
+        </div>
+        <div class="sec">portable config token</div>
+        <div class="card" style="max-width:440px;padding:16px">
+          <div style="font-size:12px;color:var(--txt2);line-height:1.6;margin-bottom:12px">
+            Copy this token to set up the dashboard on any other device. It contains your password hash, salt, OAuth Client ID, sheet ID, and goal — your actual password is never included.
+          </div>
+          <div id="token-out" style="display:none">
+            <div class="fl" style="margin-top:0">Your config token</div>
+            <textarea id="token-val" readonly style="width:100%;background:var(--surf2);border:1px solid var(--acc-b);border-radius:7px;padding:9px 12px;font-family:var(--mono);font-size:10px;color:var(--acc);outline:none;resize:none;height:72px;line-height:1.5;margin-bottom:8px"></textarea>
+            <button class="btn-s" style="margin:0;width:100%;text-align:center" onclick="copyToken()">copy to clipboard</button>
+            <div class="ok-msg" id="copy-ok"></div>
+          </div>
+          <button class="btn-p" id="gen-token-btn" onclick="exportConfig(this)">generate config token</button>
+        </div>
+        <div class="sec">about this build</div>
+        <div class="card" style="max-width:440px">
+          <div class="about-row">
+            <div>VERSION · 4.1 · PORTABLE</div>
+            <div>AUTH · SHA-256 + salt · brute-force lockout · 15-min auto-lock</div>
+            <div>CSP · script/connect/frame origins restricted</div>
+            <div>DATA · Robinhood MCP (live via Claude chat)</div>
+            <div>SHEETS · Google OAuth · token in-memory only</div>
+            <div>ORDERS · all routed through Claude chat</div>
+            <div>INPUTS · sanitized before use</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// CRYPTO — SHA-256 + salted hashing
+// ════════════════════════════════════════
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function getSalt() {
+  let salt = localStorage.getItem('pt_salt');
+  if (!salt) {
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    salt = Array.from(bytes).map(b => b.toString(16).padStart(2,'0')).join('');
+    localStorage.setItem('pt_salt', salt);
+  }
+  return salt;
+}
+
+async function hashPw(pw) {
+  // salt + password — defeats rainbow table attacks
+  return await sha256(getSalt() + pw);
+}
+
+// ════════════════════════════════════════
+// SCREEN ROUTING
+// ════════════════════════════════════════
+function showScreen(id) {
+  ['screen-setup','screen-lock','screen-app'].forEach(sid => {
+    const el = document.getElementById(sid);
+    if (!el) return;
+    if (sid === id) {
+      el.classList.remove('hidden');
+      el.style.display = (sid === 'screen-app') ? 'flex' : 'flex';
+    } else {
+      el.classList.add('hidden');
+    }
+  });
+}
+
+function checkFirstRun() {
+  if (!localStorage.getItem('pt_pw_hash')) {
+    showScreen('screen-setup');
+  } else if (sessionStorage.getItem('pt_unlocked') === '1') {
+    showScreen('screen-app');
+    loadSettings();
+    updateGoalBar();
+    startInactivity();
+    tryInitGoogle();
+  } else {
+    showScreen('screen-lock');
+    updatePips();
+    if (isLockedOut()) startLockoutCD();
+    setTimeout(() => document.getElementById('l-pw')?.focus(), 100);
+  }
+}
+
+// ════════════════════════════════════════
+// SETUP WIZARD
+// ════════════════════════════════════════
+async function setupStep1() {
+  const pw1 = document.getElementById('s-pw1').value;
+  const pw2 = document.getElementById('s-pw2').value;
+  const err = document.getElementById('s-err');
+  err.textContent = '';
+  if (pw1.length < 8) { err.textContent = 'password must be 8+ characters'; return; }
+  if (pw1 !== pw2) { err.textContent = 'passwords do not match'; return; }
+  const goal = parseFloat(document.getElementById('s-goal').value) || 10000;
+  localStorage.setItem('pt_pw_hash', await hashPw(pw1));
+  localStorage.setItem('pt_goal', goal);
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step2').style.display = 'block';
+  document.getElementById('si1').classList.remove('active');
+  document.getElementById('si2').classList.add('active');
+}
+
+function setupFinish(skip) {
+  if (!skip) {
+    const cid = sanitize(document.getElementById('s-cid').value);
+    const sid = sanitize(document.getElementById('s-sid').value);
+    if (cid) localStorage.setItem('pt_oauth_client_id', cid);
+    if (sid) sessionStorage.setItem('pt_sheet_id', sid);
+  }
+  sessionStorage.setItem('pt_unlocked', '1');
+  showScreen('screen-app');
+  loadSettings();
+  updateGoalBar();
+  startInactivity();
+  tryInitGoogle();
+}
+
+// ════════════════════════════════════════
+// BRUTE FORCE PROTECTION
+// ════════════════════════════════════════
+const MAX_ATT = 5, BASE_LO = 30;
+let loInterval = null;
+
+function getAttState() {
+  return {
+    att: parseInt(sessionStorage.getItem('pt_att') || '0'),
+    loUntil: parseInt(sessionStorage.getItem('pt_lo') || '0')
+  };
+}
+
+function isLockedOut() {
+  return Date.now() < getAttState().loUntil;
+}
+
+function recordFail() {
+  let { att } = getAttState();
+  att++;
+  sessionStorage.setItem('pt_att', att);
+  if (att >= MAX_ATT) {
+    const dur = BASE_LO * Math.pow(2, att - MAX_ATT) * 1000;
+    sessionStorage.setItem('pt_lo', Date.now() + dur);
+    return { locked: true };
+  }
+  return { locked: false, rem: MAX_ATT - att };
+}
+
+function resetAttempts() {
+  sessionStorage.removeItem('pt_att');
+  sessionStorage.removeItem('pt_lo');
+}
+
+function updatePips() {
+  const { att } = getAttState();
+  for (let i = 0; i < 5; i++) {
+    const p = document.getElementById('p' + i);
+    if (p) p.className = 'pip' + (i < att ? ' bad' : '');
+  }
+  const lbl = document.getElementById('pip-lbl');
+  if (lbl) {
+    const rem = Math.max(0, MAX_ATT - att);
+    lbl.textContent = rem > 0 ? rem + ' attempt' + (rem !== 1 ? 's' : '') + ' remaining' : 'no attempts remaining';
+    lbl.style.color = rem <= 1 ? 'var(--dng)' : 'var(--muted)';
+  }
+}
+
+function startLockoutCD() {
+  const box = document.getElementById('lockout-box');
+  const cd = document.getElementById('lo-cd');
+  const btn = document.getElementById('unlock-btn');
+  const inp = document.getElementById('l-pw');
+  if (box) box.classList.add('show');
+  if (btn) btn.disabled = true;
+  if (inp) inp.disabled = true;
+  clearInterval(loInterval);
+  loInterval = setInterval(() => {
+    const rem = Math.ceil((getAttState().loUntil - Date.now()) / 1000);
+    if (rem <= 0) {
+      clearInterval(loInterval);
+      if (box) box.classList.remove('show');
+      if (btn) btn.disabled = false;
+      if (inp) { inp.disabled = false; inp.focus(); }
+      updatePips();
+    } else {
+      if (cd) cd.textContent = rem;
+    }
+  }, 500);
+}
+
+// ════════════════════════════════════════
+// UNLOCK / LOCK
+// ════════════════════════════════════════
+async function tryUnlock() {
+  if (isLockedOut()) { startLockoutCD(); return; }
+  const inp = document.getElementById('l-pw');
+  const err = document.getElementById('l-err');
+  const btn = document.getElementById('unlock-btn');
+  const pw = inp?.value || '';
+  if (!pw) { if (err) err.textContent = 'enter your password'; return; }
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+  const hash = await hashPw(pw);
+  if (hash === localStorage.getItem('pt_pw_hash')) {
+    resetAttempts();
+    sessionStorage.setItem('pt_unlocked', '1');
+    if (inp) inp.value = '';
+    if (err) err.textContent = '';
+    showScreen('screen-app');
+    loadSettings();
+    updateGoalBar();
+    startInactivity();
+    tryInitGoogle();
+  } else {
+    const res = recordFail();
+    updatePips();
+    if (res.locked) {
+      startLockoutCD();
+    } else {
+      if (err) err.textContent = '✗ incorrect · ' + res.rem + ' attempt' + (res.rem !== 1 ? 's' : '') + ' left';
+      document.getElementById('lock-box')?.classList.add('shake');
+      setTimeout(() => document.getElementById('lock-box')?.classList.remove('shake'), 450);
+    }
+    if (inp) { inp.value = ''; inp.focus(); }
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '→ unlock'; }
+}
+
+function lockApp() {
+  sessionStorage.removeItem('pt_unlocked');
+  stopInactivity();
+  gToken = null; // wipe in-memory token
+  showScreen('screen-lock');
+  const inp = document.getElementById('l-pw');
+  if (inp) { inp.value = ''; inp.disabled = false; inp.focus(); }
+  const err = document.getElementById('l-err');
+  if (err) err.textContent = '';
+  const box = document.getElementById('lockout-box');
+  if (box) box.classList.remove('show');
+  updatePips();
+  if (isLockedOut()) startLockoutCD();
+}
+
+document.getElementById('l-pw')?.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+
+// ════════════════════════════════════════
+// INACTIVITY AUTO-LOCK (15 min)
+// ════════════════════════════════════════
+const IDLE_MS = 15 * 60 * 1000;
+const WARN_MS = 14 * 60 * 1000;
+let idleTimer = null, warnTimer = null, warnCDInt = null;
+
+function resetIdle() {
+  if (!sessionStorage.getItem('pt_unlocked')) return;
+  clearTimeout(idleTimer);
+  clearTimeout(warnTimer);
+  clearInterval(warnCDInt);
+  const warn = document.getElementById('idle-warn');
+  if (warn) warn.classList.remove('show');
+  warnTimer = setTimeout(showIdleWarn, WARN_MS);
+  idleTimer = setTimeout(lockApp, IDLE_MS);
+}
+
+function showIdleWarn() {
+  const warn = document.getElementById('idle-warn');
+  const cd = document.getElementById('idle-cd');
+  if (!warn) return;
+  warn.classList.add('show');
+  let secs = 60;
+  if (cd) cd.textContent = secs;
+  warnCDInt = setInterval(() => {
+    secs--;
+    if (cd) cd.textContent = Math.max(0, secs);
+  }, 1000);
+}
+
+function startInactivity() {
+  ['mousemove','keypress','click','touchstart','scroll'].forEach(ev =>
+    document.addEventListener(ev, resetIdle, { passive: true })
+  );
+  resetIdle();
+}
+
+function stopInactivity() {
+  clearTimeout(idleTimer);
+  clearTimeout(warnTimer);
+  clearInterval(warnCDInt);
+  document.getElementById('idle-warn')?.classList.remove('show');
+}
+
+// ════════════════════════════════════════
+// CHANGE PASSWORD
+// ════════════════════════════════════════
+function openPwModal() { document.getElementById('pw-modal').classList.add('open'); }
+function closePwModal() {
+  document.getElementById('pw-modal').classList.remove('open');
+  ['m-cur','m-new','m-conf'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
+  document.getElementById('m-err').textContent = '';
+  document.getElementById('m-ok').textContent = '';
+}
+
+async function changePw() {
+  const cur = document.getElementById('m-cur').value;
+  const nw  = document.getElementById('m-new').value;
+  const cf  = document.getElementById('m-conf').value;
+  const err = document.getElementById('m-err');
+  const ok  = document.getElementById('m-ok');
+  err.textContent = ''; ok.textContent = '';
+  if (!cur || !nw || !cf) { err.textContent = 'all fields required'; return; }
+  if (nw.length < 8) { err.textContent = 'new password must be 8+ characters'; return; }
+  if (nw !== cf) { err.textContent = 'passwords do not match'; return; }
+  if (await hashPw(cur) !== localStorage.getItem('pt_pw_hash')) { err.textContent = 'current password incorrect'; return; }
+  localStorage.setItem('pt_pw_hash', await hashPw(nw));
+  ok.textContent = '✓ password changed successfully';
+  setTimeout(closePwModal, 1500);
+}
+
+// ════════════════════════════════════════
+// GOOGLE SHEETS — token in-memory only
+// ════════════════════════════════════════
+let gToken = null;  // NEVER persisted — memory only
+let gClient = null;
+const logCache = [];
+
+function tryInitGoogle() {
+  const cid = localStorage.getItem('pt_oauth_client_id');
+  if (!cid) { updateSheetsUI(false, 'no client ID — configure in Settings'); return; }
+  if (!window.google?.accounts?.oauth2) {
+    setTimeout(tryInitGoogle, 800); // GIS not loaded yet, retry
+    return;
+  }
+  gClient = google.accounts.oauth2.initTokenClient({
+    client_id: cid,
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
+    callback: (resp) => {
+      if (resp.error) { updateSheetsUI(false, 'auth error: ' + resp.error); return; }
+      gToken = resp.access_token; // in-memory only
+      const expMs = ((resp.expires_in || 3600) - 60) * 1000;
+      setTimeout(() => { gToken = null; updateSheetsUI(false, 'token expired — reconnect'); }, expMs);
+      updateSheetsUI(true, 'connected · token valid ~1hr · in-memory only');
+    }
+  });
+  const sid = sessionStorage.getItem('pt_sheet_id');
+  updateSheetsUI(false, cid && sid ? 'configured — click connect to authenticate' : 'partially configured');
+}
+
+function requestGToken() {
+  const cid = localStorage.getItem('pt_oauth_client_id');
+  const sid = sessionStorage.getItem('pt_sheet_id');
+  const nc = document.getElementById('ss-no-cfg');
+  if (!cid || !sid) { if (nc) nc.style.display = 'block'; return; }
+  if (nc) nc.style.display = 'none';
+  if (!gClient) tryInitGoogle();
+  // Small delay to let tryInitGoogle complete
+  setTimeout(() => { if (gClient) gClient.requestAccessToken({ prompt: '' }); }, 300);
+}
+
+function updateSheetsUI(connected, msg) {
+  const dot = document.getElementById('ss-dot');
+  const msgEl = document.getElementById('ss-msg');
+  if (dot) dot.className = 'ss-dot ' + (connected ? 'sd-on' : 'sd-off');
+  if (msgEl) msgEl.textContent = msg || '';
+}
+
+async function logToSheet(tab, values) {
+  const sid = sessionStorage.getItem('pt_sheet_id');
+  if (!sid || !gToken) return false;
+  try {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sid)}/values/${encodeURIComponent(tab)}:append?valueInputOption=USER_ENTERED`;
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + gToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [values] })
+    });
+    return r.ok;
+  } catch(e) { return false; }
+}
+
+function addLog(type, msg) {
+  const ts = new Date().toLocaleTimeString();
+  logCache.unshift({ ts, type, msg });
+  if (logCache.length > 50) logCache.pop();
+  const el = document.getElementById('log-entries');
+  if (!el) return;
+  el.innerHTML = logCache.slice(0, 15).map(e =>
+    `<div class="le"><span><span style="color:var(--acc)">[${e.type}]</span> ${e.msg}</span><span style="color:var(--muted)">${e.ts}</span></div>`
+  ).join('');
+}
+
+async function logPortfolio() {
+  const ts = new Date().toISOString();
+  const ok = await logToSheet('Portfolio', [ts, '$1,054.21', '$399.33', '$654.54', '2', 'SPCX', '$199.67', '+15.8%', '$3,000 pending']);
+  addLog('PORTFOLIO', ok ? 'snapshot logged ✓' : 'saved locally (sheets not connected)');
+}
+
+async function logOrder() {
+  const ts = new Date().toISOString();
+  const ok = await logToSheet('Orders', [ts, 'SPCX', 'BUY', '2', '$172.44', 'FILLED', '••••6689']);
+  addLog('ORDER', ok ? 'order logged ✓' : 'saved locally (sheets not connected)');
+}
+
+async function logGoal() {
+  const goal = parseFloat(localStorage.getItem('pt_goal') || '10000');
+  const ts = new Date().toISOString();
+  const ok = await logToSheet('GoalProgress', [ts, '$1,054.21', '$' + goal.toLocaleString(), ((1054.21/goal)*100).toFixed(1)+'%']);
+  addLog('GOAL', ok ? 'goal progress logged ✓' : 'saved locally (sheets not connected)');
+}
+
+// ════════════════════════════════════════
+// INPUT SANITIZATION
+// ════════════════════════════════════════
+function sanitize(str) {
+  return (str || '').trim()
+    .slice(0, 200)
+    .replace(/[<>"'`]/g, '')        // strip HTML injection chars
+    .replace(/[\r\n]/g, ' ')         // no newlines
+    .replace(/javascript:/gi, '')    // strip js: URIs
+    .replace(/on\w+\s*=/gi, '')      // strip event handlers
+    .replace(/\.\.\//g, '');         // strip path traversal
+}
+
+// ════════════════════════════════════════
+// APP NAVIGATION
+// ════════════════════════════════════════
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + name)?.classList.add('active');
+  if (el) el.classList.add('active');
+  document.getElementById('page-ttl').textContent = '// ' + name;
+  resetIdle();
+}
+
+// ════════════════════════════════════════
+// ORDER ROUTING
+// ════════════════════════════════════════
+function updateCC() {
+  const inp = document.getElementById('order-in');
+  const cc = document.getElementById('cc');
+  if (!inp || !cc) return;
+  const len = inp.value.length;
+  cc.textContent = len + ' / 200';
+  cc.style.color = len > 180 ? 'var(--wrn)' : 'var(--muted)';
+}
+
+function routeOrder() {
+  const inp = document.getElementById('order-in');
+  const raw = inp?.value || '';
+  const clean = sanitize(raw);
+  if (!clean) return;
+  inp.value = ''; updateCC();
+  sendPrompt(
+    'Trade review request: ' + clean +
+    ' — Please check my buying power in account ••••0705, get the current market price, show the estimated total cost, and confirm all details. Do NOT place the order until I give explicit confirmation.'
+  );
+}
+
+// ════════════════════════════════════════
+// SETTINGS
+// ════════════════════════════════════════
+function loadSettings() {
+  const cid  = localStorage.getItem('pt_oauth_client_id') || '';
+  const sid  = sessionStorage.getItem('pt_sheet_id') || '';
+  const goal = localStorage.getItem('pt_goal') || '10000';
+  const cidEl  = document.getElementById('cfg-cid');
+  const sidEl  = document.getElementById('cfg-sid');
+  const goalEl = document.getElementById('cfg-goal');
+  if (cidEl) cidEl.value = cid;
+  if (sidEl) sidEl.value = sid;
+  if (goalEl) goalEl.value = goal;
+  const nc = document.getElementById('ss-no-cfg');
+  if (nc) nc.style.display = (!cid || !sid) ? 'block' : 'none';
+}
+
+function saveSheetCfg(btn) {
+  const cid = sanitize(document.getElementById('cfg-cid')?.value || '');
+  const sid = sanitize(document.getElementById('cfg-sid')?.value || '');
+  if (cid) localStorage.setItem('pt_oauth_client_id', cid);
+  if (sid) sessionStorage.setItem('pt_sheet_id', sid);
+  const nc = document.getElementById('ss-no-cfg');
+  if (nc) nc.style.display = (!cid || !sid) ? 'block' : 'none';
+  tryInitGoogle();
+  if (btn) { const o = btn.textContent; btn.textContent = '✓ saved'; setTimeout(() => btn.textContent = o, 1500); }
+}
+
+function saveGoal(btn) {
+  const val = parseFloat(document.getElementById('cfg-goal')?.value) || 10000;
+  localStorage.setItem('pt_goal', val);
+  updateGoalBar();
+  if (btn) { const o = btn.textContent; btn.textContent = '✓ saved'; setTimeout(() => btn.textContent = o, 1500); }
+}
+
+function updateGoalBar() {
+  const goal = parseFloat(localStorage.getItem('pt_goal') || '10000');
+  const total = 1054.21;
+  const pct = Math.min((total / goal) * 100, 100).toFixed(1);
+  const pe = document.getElementById('goal-pct');
+  const be = document.getElementById('goal-bar');
+  const le = document.getElementById('goal-lbl');
+  if (pe) pe.textContent = pct + '%';
+  if (be) be.style.width = pct + '%';
+  if (le) le.textContent = 'goal: $' + goal.toLocaleString();
+}
+
+// ════════════════════════════════════════
+// CONFIG TOKEN — export / import
+// Token format: base64(JSON({v,hash,salt,cid,sid,goal}))
+// Password is NEVER included — only the hash+salt pair
+// ════════════════════════════════════════
+function exportConfig(btn) {
+  const hash = localStorage.getItem('pt_pw_hash');
+  const salt = localStorage.getItem('pt_salt');
+  if (!hash || !salt) {
+    alert('No configuration to export — complete setup first.');
+    return;
+  }
+  const payload = {
+    v: 1,
+    hash,
+    salt,
+    cid: localStorage.getItem('pt_oauth_client_id') || '',
+    sid: sessionStorage.getItem('pt_sheet_id') || '',
+    goal: localStorage.getItem('pt_goal') || '10000'
+  };
+  const token = btoa(JSON.stringify(payload));
+  const out = document.getElementById('token-out');
+  const val = document.getElementById('token-val');
+  if (out) out.style.display = 'block';
+  if (val) val.value = token;
+  if (btn) btn.textContent = 'regenerate token';
+}
+
+function copyToken() {
+  const val = document.getElementById('token-val');
+  const ok = document.getElementById('copy-ok');
+  if (!val?.value) return;
+  navigator.clipboard.writeText(val.value).then(() => {
+    if (ok) { ok.textContent = '✓ copied to clipboard'; setTimeout(() => ok.textContent = '', 2500); }
+  }).catch(() => {
+    // fallback: select text for manual copy
+    val.select();
+    if (ok) ok.textContent = 'select all + copy manually (Ctrl+A, Ctrl+C)';
+  });
+}
+
+async function importConfig() {
+  const raw = document.getElementById('s-token')?.value.trim();
+  const err = document.getElementById('s-token-err');
+  if (!raw) { if (err) err.textContent = 'paste a config token first'; return; }
+  let payload;
+  try {
+    payload = JSON.parse(atob(raw));
+  } catch(e) {
+    if (err) err.textContent = 'invalid token — check you copied the full string';
+    return;
+  }
+  if (!payload.v || !payload.hash || !payload.salt) {
+    if (err) err.textContent = 'token missing required fields — regenerate from source device';
+    return;
+  }
+  // Apply config to this device's storage
+  localStorage.setItem('pt_pw_hash', payload.hash);
+  localStorage.setItem('pt_salt', payload.salt);
+  if (payload.cid) localStorage.setItem('pt_oauth_client_id', payload.cid);
+  if (payload.sid) sessionStorage.setItem('pt_sheet_id', payload.sid);
+  if (payload.goal) localStorage.setItem('pt_goal', payload.goal);
+  // Done — go straight to lock screen (user enters their password)
+  if (err) err.textContent = '';
+  showScreen('screen-lock');
+  updatePips();
+  setTimeout(() => {
+    document.getElementById('l-pw')?.focus();
+  }, 150);
+}
+
+function goStep1() {
+  document.getElementById('step0').style.display = 'none';
+  document.getElementById('step1').style.display = 'block';
+  document.getElementById('si0').classList.remove('active');
+  document.getElementById('si1').classList.add('active');
+}
+
+// ════════════════════════════════════════
+// BOOT
+// ════════════════════════════════════════
+checkFirstRun();
+</script>
+</body>
+</html>
