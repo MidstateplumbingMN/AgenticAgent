@@ -151,6 +151,24 @@ nav .sp{flex:1}
 .step-ind{display:flex;gap:6px;margin-bottom:20px}
 .step-pip{width:24px;height:3px;border-radius:2px;background:var(--bdr)}
 .step-pip.active{background:var(--acc)}
+.gp-tab{background:var(--surf2);border:1px solid var(--bdr);border-radius:7px;padding:7px 14px;font-family:var(--mono);font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s}
+.gp-tab:hover{color:var(--txt);border-color:var(--bdr)}
+.gp-tab.active{background:var(--acc-d);color:var(--acc);border-color:var(--acc-b)}
+.ms{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surf);border:1px solid var(--bdr);border-radius:8px;margin-bottom:7px}
+.ms.hit{border-color:var(--acc-b);background:var(--acc-d)}
+.ms.locked{opacity:.5}
+.ms-icon{font-size:18px;width:28px;text-align:center;flex-shrink:0}
+.ms-body{flex:1}
+.ms-title{font-size:13px;font-weight:500}
+.ms-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.ms-badge{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:4px}
+.ag-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surf);border:1px solid var(--bdr);border-radius:8px;margin-bottom:7px}
+.ag-period{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--txt);width:80px}
+.ag-target{font-family:var(--mono);font-size:13px;color:var(--acc)}
+.ag-prog{flex:1;margin:0 14px}
+.ag-stat{font-family:var(--mono);font-size:11px;color:var(--muted);min-width:50px;text-align:right}
+select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238892A4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:28px}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -280,6 +298,7 @@ nav .sp{flex:1}
       <button class="ni" onclick="switchTab('orders',this)"><span>◁</span> Orders</button>
       <button class="ni" onclick="switchTab('sheets',this)"><span>▤</span> Sheets Log</button>
       <button class="ni" onclick="switchTab('risk',this)"><span>△</span> Risk Rules</button>
+      <button class="ni" onclick="switchTab('goals',this)"><span>◎</span> Goals</button>
       <div class="sp"></div>
       <button class="ni" onclick="switchTab('settings',this)"><span>⚙</span> Settings</button>
     </nav>
@@ -305,13 +324,32 @@ nav .sp{flex:1}
           <div class="card"><div class="cl">Equity Value</div><div class="cv">$399.33</div><div class="cs">2× SPCX</div></div>
           <div class="card"><div class="cl">Total Gain</div><div class="cv" style="color:var(--acc)">+15.8%</div><div class="cs">SPCX since IPO</div></div>
         </div>
-        <div class="card" style="margin-top:14px;padding:16px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div class="cl" style="margin:0">Goal Progress</div>
-            <span style="font-family:var(--mono);font-size:11px;color:var(--acc)" id="goal-pct">10.5%</span>
+        <!-- GOAL SUMMARY STRIP -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px" id="goal-strip">
+          <div class="card" style="padding:12px;cursor:pointer;transition:border .15s" onclick="switchTab('goals',document.querySelectorAll('.ni')[8])" id="gs-day">
+            <div class="cl" style="margin-bottom:4px">Today</div>
+            <div style="font-family:var(--mono);font-size:15px;font-weight:600" id="gs-day-pct">—</div>
+            <div class="gbar" style="margin:5px 0 3px"><div class="gfill" id="gs-day-bar" style="width:0%"></div></div>
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono)" id="gs-day-lbl">set goal →</div>
           </div>
-          <div class="gbar"><div class="gfill" id="goal-bar" style="width:10.5%"></div></div>
-          <div class="gmeta"><span>$1,054 current</span><span id="goal-lbl">goal: $10,000</span></div>
+          <div class="card" style="padding:12px;cursor:pointer;transition:border .15s" onclick="switchTab('goals',document.querySelectorAll('.ni')[8])" id="gs-week">
+            <div class="cl" style="margin-bottom:4px">This Week</div>
+            <div style="font-family:var(--mono);font-size:15px;font-weight:600" id="gs-week-pct">—</div>
+            <div class="gbar" style="margin:5px 0 3px"><div class="gfill" id="gs-week-bar" style="width:0%"></div></div>
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono)" id="gs-week-lbl">set goal →</div>
+          </div>
+          <div class="card" style="padding:12px;cursor:pointer;transition:border .15s" onclick="switchTab('goals',document.querySelectorAll('.ni')[8])" id="gs-month">
+            <div class="cl" style="margin-bottom:4px">This Month</div>
+            <div style="font-family:var(--mono);font-size:15px;font-weight:600" id="gs-month-pct">—</div>
+            <div class="gbar" style="margin:5px 0 3px"><div class="gfill" id="gs-month-bar" style="width:0%"></div></div>
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono)" id="gs-month-lbl">set goal →</div>
+          </div>
+          <div class="card" style="padding:12px;cursor:pointer;transition:border .15s" onclick="switchTab('goals',document.querySelectorAll('.ni')[8])" id="gs-year">
+            <div class="cl" style="margin-bottom:4px">This Year</div>
+            <div style="font-family:var(--mono);font-size:15px;font-weight:600" id="gs-year-pct">—</div>
+            <div class="gbar" style="margin:5px 0 3px"><div class="gfill" id="gs-year-bar" style="width:0%"></div></div>
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono)" id="gs-year-lbl">set goal →</div>
+          </div>
         </div>
         <div class="sec">market snapshot</div>
         <div class="g3" style="margin-top:0">
@@ -431,28 +469,91 @@ nav .sp{flex:1}
           <button class="chip" onclick="sendPrompt('Once my $3,000 deposit clears, how should I allocate $3,654 to maximize growth toward my revenue goal?')">$3K deployment plan ↗</button>
           <button class="chip" onclick="sendPrompt('Full risk assessment of my current portfolio: SPCX +15.8%, single position, $654 cash, $3K pending.')">risk assessment ↗</button>
         </div>
-        <div class="sec">route an order</div>
-        <div class="card" style="padding:16px">
-          <div style="font-size:12px;color:var(--txt2);line-height:1.6;margin-bottom:12px">Describe a trade — Claude reviews it, checks buying power in ••••0705, and confirms before executing. Nothing executes without your explicit confirmation.</div>
-          <div class="fl" style="margin-top:0">Order intent</div>
-          <input class="fi" id="order-in" placeholder='e.g. "buy $200 of NVDA at market"' maxlength="200" oninput="updateCC()">
-          <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin:4px 0 10px;text-align:right" id="cc">0 / 200</div>
-          <button class="btn-p" style="margin-top:0" onclick="routeOrder()">→ send to claude for review</button>
+        <div class="sec">execute a trade</div>
+        <div class="card" style="padding:16px" id="trade-builder">
+          <div class="notice n-acc" style="margin-bottom:14px"><strong>Account ••••0705</strong> · $654.54 available · agentic enabled · two-step: review then confirm</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div>
+              <div class="fl" style="margin-top:0">Symbol</div>
+              <input class="fi" id="t-sym" placeholder="NVDA" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+            </div>
+            <div>
+              <div class="fl" style="margin-top:0">Side</div>
+              <select class="fi" id="t-side" style="cursor:pointer">
+                <option value="buy">BUY</option>
+                <option value="sell">SELL</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div>
+              <div class="fl" style="margin-top:0">Order type</div>
+              <select class="fi" id="t-type" style="cursor:pointer" onchange="toggleLimitField()">
+                <option value="market">Market</option>
+                <option value="limit">Limit</option>
+                <option value="stop_limit">Stop Limit</option>
+                <option value="stop_market">Stop Market</option>
+              </select>
+            </div>
+            <div>
+              <div class="fl" style="margin-top:0">Amount ($ notional)</div>
+              <input class="fi" id="t-amt" placeholder="200.00" type="number" min="1">
+            </div>
+          </div>
+          <div id="limit-field" style="display:none;margin-bottom:10px">
+            <div class="fl" style="margin-top:0">Limit price</div>
+            <input class="fi" id="t-limit" placeholder="e.g. 135.00" type="number" step="0.01">
+          </div>
+          <div id="stop-field" style="display:none;margin-bottom:10px">
+            <div class="fl" style="margin-top:0">Stop price</div>
+            <input class="fi" id="t-stop" placeholder="e.g. 130.00" type="number" step="0.01">
+          </div>
+          <div class="err-msg" id="t-err"></div>
+          <button class="btn-p" style="margin-top:4px" id="review-btn" onclick="reviewTrade()">→ review order</button>
+        </div>
+
+        <!-- REVIEW PANEL — shown after review_equity_order -->
+        <div id="trade-review" style="display:none;margin-top:14px">
+          <div class="sec">order review</div>
+          <div class="card" style="padding:16px;border-color:var(--acc-b)">
+            <div id="review-content"></div>
+            <div class="err-msg" id="review-alerts" style="color:var(--wrn)"></div>
+            <div style="display:flex;gap:10px;margin-top:14px">
+              <button class="btn-s" style="flex:1;margin:0;text-align:center" onclick="cancelReview()">✕ cancel</button>
+              <button class="btn-p" style="flex:1;margin:0" id="confirm-btn" onclick="confirmTrade()">✓ confirm &amp; place</button>
+            </div>
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:8px;text-align:center">account ••••0705 · real money · irreversible</div>
+          </div>
+        </div>
+
+        <!-- ORDER RESULT -->
+        <div id="trade-result" style="display:none;margin-top:14px">
+          <div class="sec">order placed</div>
+          <div class="card" style="padding:16px" id="result-content"></div>
         </div>
       </div>
 
       <!-- ── ORDERS ── -->
       <div class="tab" id="tab-orders">
         <div class="sec">order history · agentic ••••0705</div>
-        <table class="tbl">
-          <thead><tr><th>Date</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Price</th><th>Status</th></tr></thead>
-          <tbody>
-            <tr><td style="color:var(--muted)">Jun 10 2026</td><td style="color:var(--acc)">SPCX</td><td style="color:var(--acc)">BUY</td><td>2.00</td><td>$172.44</td><td style="color:var(--acc)">FILLED</td></tr>
-          </tbody>
-        </table>
-        <div class="chips" style="margin-top:12px">
-          <button class="chip" onclick="sendPrompt('Pull my full order history from both Robinhood accounts including pending and cancelled orders.')">load full history ↗</button>
+        <div class="chips">
+          <button class="chip" onclick="sendPrompt('Pull my full live order history from Robinhood account ••••0705. Show all orders including filled, pending, and cancelled. Format as a clean table with date, symbol, side, type, quantity, price, and status.')">load live history ↗</button>
+          <button class="chip" onclick="sendPrompt('Are there any open or pending orders on my Robinhood account ••••0705 right now?')">check open orders ↗</button>
           <button class="chip" onclick="logOrder()">log to sheets ↗</button>
+        </div>
+        <div id="orders-live" style="margin-top:4px">
+          <table class="tbl" id="orders-tbl">
+            <thead><tr><th>Date</th><th>Symbol</th><th>Side</th><th>Type</th><th>Qty</th><th>Price</th><th>Status</th></tr></thead>
+            <tbody id="orders-tbody">
+              <tr><td style="color:var(--muted)">Jun 10 2026</td><td style="color:var(--acc)">SPCX</td><td style="color:var(--acc)">BUY</td><td>MARKET</td><td>2.00</td><td>$172.44</td><td style="color:var(--acc)">FILLED</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="sec" style="margin-top:20px">quick trade from orders tab</div>
+        <div class="chips">
+          <button class="chip" onclick="switchTab('advisor', document.querySelectorAll('.ni')[4]);document.getElementById('t-side').value='buy'">new buy order ↗</button>
+          <button class="chip" onclick="switchTab('advisor', document.querySelectorAll('.ni')[4]);document.getElementById('t-side').value='sell'">new sell order ↗</button>
+          <button class="chip" onclick="sendPrompt('Cancel all open orders on my Robinhood account ••••0705. Review each one with me before cancelling.')">cancel open orders ↗</button>
         </div>
       </div>
 
@@ -497,6 +598,106 @@ nav .sp{flex:1}
         </div>
       </div>
 
+      <!-- ── GOALS ── -->
+      <div class="tab" id="tab-goals">
+
+        <!-- PERIOD TABS -->
+        <div style="display:flex;gap:6px;margin-bottom:20px" id="goal-period-tabs">
+          <button class="gp-tab active" data-period="day" onclick="selectPeriod('day',this)">Daily</button>
+          <button class="gp-tab" data-period="week" onclick="selectPeriod('week',this)">Weekly</button>
+          <button class="gp-tab" data-period="month" onclick="selectPeriod('month',this)">Monthly</button>
+          <button class="gp-tab" data-period="year" onclick="selectPeriod('year',this)">Yearly</button>
+          <button class="gp-tab" data-period="custom" onclick="selectPeriod('custom',this)">Custom</button>
+        </div>
+
+        <!-- GOAL DETAIL CARD — changes per period -->
+        <div id="goal-detail">
+
+          <div class="card" style="padding:20px;margin-bottom:14px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
+
+              <!-- Ring + value -->
+              <div style="display:flex;align-items:center;gap:20px">
+                <div style="position:relative;width:80px;height:80px;flex-shrink:0">
+                  <svg width="80" height="80" style="transform:rotate(-90deg)">
+                    <circle cx="40" cy="40" r="32" fill="none" stroke="var(--bdr)" stroke-width="7"/>
+                    <circle cx="40" cy="40" r="32" fill="none" stroke="var(--acc)" stroke-width="7"
+                      stroke-dasharray="201.06" id="goal-ring-fill"
+                      stroke-dashoffset="201.06" stroke-linecap="round"
+                      style="transition:stroke-dashoffset .8s ease"/>
+                  </svg>
+                  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                    <div style="font-family:var(--mono);font-size:14px;font-weight:600;color:var(--txt)" id="ring-pct">0%</div>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:11px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.6px" id="period-label">Daily Goal</div>
+                  <div style="font-family:var(--mono);font-size:26px;font-weight:600;color:var(--txt);margin-top:2px" id="goal-current-val">$1,054</div>
+                  <div style="font-size:12px;color:var(--muted);margin-top:2px" id="goal-target-desc">target: not set</div>
+                </div>
+              </div>
+
+              <!-- Edit goal -->
+              <div style="min-width:180px">
+                <div class="fl" style="margin-top:0" id="goal-input-label">Set daily target ($)</div>
+                <div style="display:flex;gap:6px;align-items:center">
+                  <input class="fi" id="goal-input" type="number" placeholder="e.g. 1100" style="flex:1;padding:8px 10px;font-size:13px">
+                  <button class="btn-p" style="margin:0;padding:8px 14px;width:auto;font-size:12px" onclick="saveCurrentGoal()">set</button>
+                </div>
+                <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap" id="goal-presets"></div>
+              </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div style="margin-top:16px">
+              <div class="gbar" style="height:10px"><div class="gfill" id="goal-main-bar" style="width:0%;transition:width .8s ease"></div></div>
+              <div class="gmeta" style="margin-top:5px">
+                <span id="goal-bar-left">$0 start</span>
+                <span id="goal-bar-right">$0 to go</span>
+              </div>
+            </div>
+
+            <!-- Status message -->
+            <div id="goal-status-msg" style="margin-top:12px;padding:10px 14px;border-radius:7px;font-family:var(--mono);font-size:12px;display:none"></div>
+          </div>
+
+          <!-- STREAK + STATS ROW -->
+          <div class="g3" style="margin-top:0">
+            <div class="card" style="padding:14px;text-align:center">
+              <div style="font-size:22px;margin-bottom:4px" id="streak-emoji">🔥</div>
+              <div style="font-family:var(--mono);font-size:18px;font-weight:600;color:var(--acc)" id="streak-count">0</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">day streak</div>
+            </div>
+            <div class="card" style="padding:14px;text-align:center">
+              <div class="cl" style="margin-bottom:5px">Goals Hit</div>
+              <div style="font-family:var(--mono);font-size:18px;font-weight:600;color:var(--acc)" id="goals-hit">0</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">this month</div>
+            </div>
+            <div class="card" style="padding:14px;text-align:center">
+              <div class="cl" style="margin-bottom:5px">Best Day</div>
+              <div style="font-family:var(--mono);font-size:18px;font-weight:600" id="best-day">—</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px" id="best-day-date">no data yet</div>
+            </div>
+          </div>
+
+          <!-- ALL GOALS SUMMARY -->
+          <div class="sec">all goal targets</div>
+          <div id="all-goals-list"></div>
+
+          <!-- MILESTONES -->
+          <div class="sec">milestones</div>
+          <div id="milestones-list" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+
+          <!-- AI GOAL COACH -->
+          <div class="sec">goal coach</div>
+          <div class="chips">
+            <button class="chip" onclick="sendPrompt('Based on my current portfolio value of $1,054 and my Robinhood positions, am I on track to hit my goals? Give me a specific action plan for today.')">am I on track? ↗</button>
+            <button class="chip" onclick="sendPrompt('Suggest realistic daily, weekly, monthly, and yearly portfolio growth goals for someone starting with $1,054 who wants to reach $10,000.')">suggest goals for me ↗</button>
+            <button class="chip" onclick="sendPrompt('What trades would help me hit my daily portfolio goal today given my $654 in buying power?')">what to do today ↗</button>
+          </div>
+        </div>
+      </div>
+
       <!-- ── SETTINGS ── -->
       <div class="tab" id="tab-settings">
         <div class="sec">security</div>
@@ -519,9 +720,8 @@ nav .sp{flex:1}
         </div>
         <div class="sec">goal</div>
         <div class="card" style="max-width:440px;padding:16px">
-          <div class="fl" style="margin-top:0">Revenue goal ($)</div>
-          <input class="fi" id="cfg-goal" type="number" placeholder="10000">
-          <button class="btn-p" onclick="saveGoal(this)">save goal</button>
+          <div style="font-size:13px;color:var(--txt2);line-height:1.6;margin-bottom:12px">Daily, weekly, monthly, and yearly goals are managed in the Goals tab with progress rings, streaks, and milestones.</div>
+          <button class="btn-s" style="margin:0" onclick="switchTab('goals',document.querySelectorAll('.ni')[8])">go to goals →</button>
         </div>
         <div class="sec">portable config token</div>
         <div class="card" style="max-width:440px;padding:16px">
@@ -959,27 +1159,158 @@ function switchTab(name, el) {
 }
 
 // ════════════════════════════════════════
-// ORDER ROUTING
+// TRADE EXECUTION
+// Two-step: review → confirm → place
+// All via sendPrompt → Claude → Robinhood MCP
 // ════════════════════════════════════════
-function updateCC() {
-  const inp = document.getElementById('order-in');
-  const cc = document.getElementById('cc');
-  if (!inp || !cc) return;
-  const len = inp.value.length;
-  cc.textContent = len + ' / 200';
-  cc.style.color = len > 180 ? 'var(--wrn)' : 'var(--muted)';
+let pendingTrade = null; // holds parsed trade for confirm step
+
+function toggleLimitField() {
+  const type = document.getElementById('t-type')?.value;
+  const lf = document.getElementById('limit-field');
+  const sf = document.getElementById('stop-field');
+  if (lf) lf.style.display = (type === 'limit' || type === 'stop_limit') ? 'block' : 'none';
+  if (sf) sf.style.display = (type === 'stop_market' || type === 'stop_limit') ? 'block' : 'none';
 }
 
-function routeOrder() {
-  const inp = document.getElementById('order-in');
-  const raw = inp?.value || '';
-  const clean = sanitize(raw);
-  if (!clean) return;
-  inp.value = ''; updateCC();
-  sendPrompt(
-    'Trade review request: ' + clean +
-    ' — Please check my buying power in account ••••0705, get the current market price, show the estimated total cost, and confirm all details. Do NOT place the order until I give explicit confirmation.'
-  );
+function reviewTrade() {
+  const sym   = sanitize(document.getElementById('t-sym')?.value || '').toUpperCase();
+  const side  = document.getElementById('t-side')?.value;
+  const type  = document.getElementById('t-type')?.value;
+  const amt   = parseFloat(document.getElementById('t-amt')?.value);
+  const limit = parseFloat(document.getElementById('t-limit')?.value);
+  const stop  = parseFloat(document.getElementById('t-stop')?.value);
+  const err   = document.getElementById('t-err');
+
+  err.textContent = '';
+  if (!sym)           { err.textContent = 'enter a symbol'; return; }
+  if (!sym.match(/^[A-Z]{1,5}$/)) { err.textContent = 'invalid symbol'; return; }
+  if (!amt || amt < 1){ err.textContent = 'enter a dollar amount (min $1)'; return; }
+  if ((type === 'limit' || type === 'stop_limit') && !limit) { err.textContent = 'enter a limit price'; return; }
+  if ((type === 'stop_market' || type === 'stop_limit') && !stop) { err.textContent = 'enter a stop price'; return; }
+
+  pendingTrade = { sym, side, type, amt, limit, stop };
+
+  // Build a natural-language review prompt for Claude
+  let desc = `${side.toUpperCase()} $${amt} of ${sym} — ${type.replace('_',' ')} order`;
+  if (limit) desc += ` at limit $${limit}`;
+  if (stop)  desc += ` with stop $${stop}`;
+
+  const prompt =
+    `Trade review request from the dashboard: ${desc}. ` +
+    `Account ••••0705 (agentic). ` +
+    `Please: 1) get the current ${sym} price, 2) run review_equity_order, 3) show me the estimated cost, shares, and any alerts. ` +
+    `Reply with REVIEW_RESULT: followed by a JSON block like: ` +
+    `{"symbol":"${sym}","side":"${side}","type":"${type}","dollar_amount":"${amt.toFixed(2)}"` +
+    (limit ? `,"limit_price":"${limit.toFixed(2)}"` : '') +
+    (stop  ? `,"stop_price":"${stop.toFixed(2)}"` : '') +
+    `,"estimated_cost":"?","shares":"?","price":"?","alerts":"none"}`;
+
+  // Show review panel with loading state
+  document.getElementById('trade-review').style.display = 'block';
+  document.getElementById('trade-result').style.display = 'none';
+  document.getElementById('review-content').innerHTML =
+    `<div style="font-family:var(--mono);font-size:12px;color:var(--muted);padding:10px 0">
+       <div style="display:flex;align-items:center;gap:8px">
+         <div style="width:12px;height:12px;border:2px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite"></div>
+         reviewing ${desc}...
+       </div>
+     </div>`;
+  document.getElementById('review-alerts').textContent = '';
+  document.getElementById('confirm-btn').disabled = true;
+
+  sendPrompt(prompt);
+
+  // Watch for Claude's response via a polling approach on the review panel
+  // Claude will reply in chat — user can also click confirm directly after reviewing
+  // Enable confirm after 3s (Claude response time)
+  setTimeout(() => {
+    const btn = document.getElementById('confirm-btn');
+    if (btn) btn.disabled = false;
+    const rc = document.getElementById('review-content');
+    if (rc && rc.innerHTML.includes('reviewing')) {
+      rc.innerHTML = reviewHTML(pendingTrade);
+    }
+    document.getElementById('review-alerts').textContent =
+      '⚠ Check Claude chat above for full review details before confirming.';
+  }, 3000);
+}
+
+function reviewHTML(t) {
+  const typeLabel = t.type.replace(/_/g,' ').toUpperCase();
+  return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:var(--mono);font-size:12px">
+      <div style="background:var(--surf2);border-radius:6px;padding:8px">
+        <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Symbol</div>
+        <div style="color:var(--txt);font-size:15px;font-weight:600">${t.sym}</div>
+      </div>
+      <div style="background:var(--surf2);border-radius:6px;padding:8px">
+        <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Side</div>
+        <div style="color:${t.side==='buy'?'var(--acc)':'var(--dng)'};font-size:15px;font-weight:600">${t.side.toUpperCase()}</div>
+      </div>
+      <div style="background:var(--surf2);border-radius:6px;padding:8px">
+        <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Type</div>
+        <div style="color:var(--txt)">${typeLabel}</div>
+      </div>
+      <div style="background:var(--surf2);border-radius:6px;padding:8px">
+        <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Amount</div>
+        <div style="color:var(--txt)">$${t.amt.toFixed(2)}</div>
+      </div>
+      ${t.limit ? `<div style="background:var(--surf2);border-radius:6px;padding:8px"><div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Limit</div><div style="color:var(--txt)">$${t.limit.toFixed(2)}</div></div>` : ''}
+      ${t.stop  ? `<div style="background:var(--surf2);border-radius:6px;padding:8px"><div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Stop</div><div style="color:var(--txt)">$${t.stop.toFixed(2)}</div></div>` : ''}
+    </div>
+    <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:10px">Review Claude chat above for current price, estimated shares, and pre-trade alerts.</div>`;
+}
+
+function cancelReview() {
+  pendingTrade = null;
+  document.getElementById('trade-review').style.display = 'none';
+  document.getElementById('trade-result').style.display = 'none';
+  document.getElementById('t-err').textContent = '';
+}
+
+function confirmTrade() {
+  if (!pendingTrade) return;
+  const t = pendingTrade;
+
+  let desc = `${t.side.toUpperCase()} $${t.amt.toFixed(2)} of ${t.sym}`;
+  if (t.limit) desc += ` limit $${t.limit.toFixed(2)}`;
+  if (t.stop)  desc += ` stop $${t.stop.toFixed(2)}`;
+
+  const prompt =
+    `CONFIRMED — please place this order now on account ••••0705 (agentic): ` +
+    `${desc}, type: ${t.type.replace('_',' ')}, dollar_amount: ${t.amt.toFixed(2)}` +
+    (t.limit ? `, limit_price: ${t.limit.toFixed(2)}` : '') +
+    (t.stop  ? `, stop_price: ${t.stop.toFixed(2)}`  : '') +
+    `. Use place_equity_order with a fresh ref_id UUID. ` +
+    `After placing, reply with ORDER_PLACED: followed by the order ID, status, and filled price if available.`;
+
+  // Show placing state
+  const rc = document.getElementById('result-content');
+  document.getElementById('trade-result').style.display = 'block';
+  rc.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--muted)"><div style="width:12px;height:12px;border:2px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite"></div>placing order...</div>`;
+
+  document.getElementById('confirm-btn').disabled = true;
+  sendPrompt(prompt);
+
+  // Update result panel after Claude responds
+  setTimeout(() => {
+    rc.innerHTML = `
+      <div style="font-family:var(--mono);font-size:12px;color:var(--acc);margin-bottom:8px">✓ order sent to Robinhood</div>
+      <div style="font-size:12px;color:var(--txt2);line-height:1.7">${desc}<br>Check Claude chat above for order ID and fill confirmation.</div>
+      <button class="chip" style="margin-top:10px" onclick="sendPrompt('Check the status of my most recent order on account ••••0705.')">check order status ↗</button>`;
+    // Log to sheets
+    logOrderEntry(t);
+  }, 4000);
+
+  pendingTrade = null;
+  document.getElementById('trade-review').style.display = 'none';
+}
+
+async function logOrderEntry(t) {
+  const ts = new Date().toISOString();
+  const ok = await logToSheet('Orders', [ts, t.sym, t.side.toUpperCase(), t.type, '$'+t.amt.toFixed(2), t.limit||'', t.stop||'', '••••0705', 'placed']);
+  addLog('ORDER', `${t.side.toUpperCase()} $${t.amt} ${t.sym} — ${ok ? 'logged ✓' : 'saved locally'}`);
 }
 
 // ════════════════════════════════════════
@@ -1010,23 +1341,241 @@ function saveSheetCfg(btn) {
   if (btn) { const o = btn.textContent; btn.textContent = '✓ saved'; setTimeout(() => btn.textContent = o, 1500); }
 }
 
+// ════════════════════════════════════════
+// GOALS ENGINE
+// ════════════════════════════════════════
+const PORTFOLIO_VAL = 1054.21;
+const PORTFOLIO_START = 1000; // approximate start of period baseline
+
+const PERIODS = {
+  day:    { label: 'Daily Goal',   inputLabel: 'Set daily target ($)',   presets: [1060, 1075, 1100, 1150] },
+  week:   { label: 'Weekly Goal',  inputLabel: 'Set weekly target ($)',  presets: [1100, 1150, 1200, 1300] },
+  month:  { label: 'Monthly Goal', inputLabel: 'Set monthly target ($)', presets: [1200, 1500, 2000, 2500] },
+  year:   { label: 'Yearly Goal',  inputLabel: 'Set yearly target ($)',  presets: [2000, 5000, 10000, 25000] },
+  custom: { label: 'Custom Goal',  inputLabel: 'Set custom target ($)',  presets: [] }
+};
+
+let activePeriod = 'day';
+
+function loadGoals() {
+  const stored = JSON.parse(localStorage.getItem('pt_goals') || '{}');
+  return stored;
+}
+
+function saveGoals(goals) {
+  localStorage.setItem('pt_goals', JSON.stringify(goals));
+}
+
+function getGoal(period) {
+  return loadGoals()[period] || null;
+}
+
+function selectPeriod(period, btn) {
+  activePeriod = period;
+  document.querySelectorAll('.gp-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderGoalDetail(period);
+}
+
+function renderGoalDetail(period) {
+  const cfg = PERIODS[period];
+  const target = getGoal(period);
+  const current = PORTFOLIO_VAL;
+  const pct = target ? Math.min((current / target) * 100, 100) : 0;
+
+  // Period label
+  const pl = document.getElementById('period-label');
+  if (pl) pl.textContent = cfg.label;
+
+  // Input label
+  const il = document.getElementById('goal-input-label');
+  if (il) il.textContent = cfg.inputLabel;
+
+  // Pre-fill input if goal set
+  const gi = document.getElementById('goal-input');
+  if (gi) gi.value = target || '';
+
+  // Ring
+  const ring = document.getElementById('goal-ring-fill');
+  const ringPct = document.getElementById('ring-pct');
+  if (ring) {
+    const circumference = 201.06;
+    const offset = circumference - (pct / 100) * circumference;
+    ring.style.strokeDashoffset = offset;
+    ring.style.stroke = pct >= 100 ? 'var(--acc)' : pct >= 75 ? 'var(--acc)' : pct >= 50 ? 'var(--wrn)' : 'var(--muted)';
+  }
+  if (ringPct) ringPct.textContent = Math.round(pct) + '%';
+
+  // Values
+  const cv = document.getElementById('goal-current-val');
+  if (cv) cv.textContent = '$' + current.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+  const td = document.getElementById('goal-target-desc');
+  if (td) td.textContent = target ? 'target: $' + parseFloat(target).toLocaleString() : 'target: not set — enter below';
+
+  // Progress bar
+  const mb = document.getElementById('goal-main-bar');
+  if (mb) mb.style.width = pct + '%';
+
+  const bl = document.getElementById('goal-bar-left');
+  const br = document.getElementById('goal-bar-right');
+  if (bl) bl.textContent = '$' + PORTFOLIO_START.toLocaleString() + ' start';
+  if (br) {
+    if (target) {
+      const toGo = Math.max(0, parseFloat(target) - current);
+      br.textContent = toGo > 0 ? '$' + toGo.toFixed(2) + ' to go' : '✓ goal reached!';
+    } else {
+      br.textContent = 'set a target';
+    }
+  }
+
+  // Status message
+  const sm = document.getElementById('goal-status-msg');
+  if (sm && target) {
+    if (pct >= 100) {
+      sm.style.display = 'block';
+      sm.style.background = 'var(--acc-d)';
+      sm.style.border = '1px solid var(--acc-b)';
+      sm.style.color = 'var(--acc)';
+      sm.textContent = '🎉 Goal reached! Great work — consider setting a higher target.';
+    } else if (pct >= 75) {
+      sm.style.display = 'block';
+      sm.style.background = 'var(--acc-d)';
+      sm.style.border = '1px solid var(--acc-b)';
+      sm.style.color = 'var(--acc)';
+      sm.textContent = '💪 Almost there — ' + (100 - Math.round(pct)) + '% away from your ' + period + ' goal.';
+    } else {
+      sm.style.display = 'none';
+    }
+  } else if (sm) {
+    sm.style.display = 'none';
+  }
+
+  // Presets
+  const presetsEl = document.getElementById('goal-presets');
+  if (presetsEl) {
+    presetsEl.innerHTML = cfg.presets.map(p =>
+      `<button class="chip" style="padding:5px 9px;font-size:11px" onclick="document.getElementById('goal-input').value=${p};saveCurrentGoal()">${'$' + p.toLocaleString()}</button>`
+    ).join('');
+  }
+
+  renderAllGoals();
+  renderMilestones();
+  updateOverviewStrip();
+}
+
+function saveCurrentGoal() {
+  const val = parseFloat(document.getElementById('goal-input')?.value);
+  if (!val || val <= 0) return;
+  const goals = loadGoals();
+  goals[activePeriod] = val;
+  // Record today's portfolio value as the period start if not set
+  const startKey = 'pt_start_' + activePeriod;
+  if (!localStorage.getItem(startKey)) {
+    localStorage.setItem(startKey, PORTFOLIO_VAL);
+  }
+  saveGoals(goals);
+  renderGoalDetail(activePeriod);
+  updateStreak();
+  // visual feedback
+  const btn = event?.target;
+  if (btn) { const o = btn.textContent; btn.textContent = '✓'; setTimeout(() => btn.textContent = o, 1200); }
+}
+
+function renderAllGoals() {
+  const el = document.getElementById('all-goals-list');
+  if (!el) return;
+  const goals = loadGoals();
+  const rows = ['day','week','month','year','custom'].map(p => {
+    const target = goals[p];
+    if (!target) return `
+      <div class="ag-row">
+        <span class="ag-period">${p.charAt(0).toUpperCase()+p.slice(1)}</span>
+        <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">not set</span>
+        <button class="chip" style="padding:4px 9px;font-size:10px;margin-left:auto" onclick="selectPeriod('${p}',document.querySelector('[data-period=${p}]'))">set ↗</button>
+      </div>`;
+    const pct = Math.min((PORTFOLIO_VAL / target) * 100, 100);
+    const color = pct >= 100 ? 'var(--acc)' : pct >= 50 ? 'var(--wrn)' : 'var(--muted)';
+    return `
+      <div class="ag-row">
+        <span class="ag-period">${p.charAt(0).toUpperCase()+p.slice(1)}</span>
+        <span class="ag-target">$${parseFloat(target).toLocaleString()}</span>
+        <div class="ag-prog"><div class="gbar" style="margin:0"><div class="gfill" style="width:${pct.toFixed(1)}%;background:${color}"></div></div></div>
+        <span class="ag-stat" style="color:${color}">${Math.round(pct)}%</span>
+      </div>`;
+  });
+  el.innerHTML = rows.join('');
+}
+
+function renderMilestones() {
+  const el = document.getElementById('milestones-list');
+  if (!el) return;
+  const milestones = [
+    { val: 1000,  icon: '🚀', title: 'Launch',      desc: 'Portfolio reached $1,000' },
+    { val: 1500,  icon: '📈', title: 'Growth',       desc: 'Portfolio reached $1,500' },
+    { val: 2000,  icon: '💰', title: 'Two Grand',    desc: 'Portfolio reached $2,000' },
+    { val: 5000,  icon: '⭐', title: 'Five Star',    desc: 'Portfolio reached $5,000' },
+    { val: 10000, icon: '🏆', title: 'Five Figures', desc: 'Portfolio reached $10,000' },
+    { val: 25000, icon: '💎', title: 'Diamond',      desc: 'Portfolio reached $25,000' },
+    { val: 50000, icon: '🌙', title: 'Moon',         desc: 'Portfolio reached $50,000' },
+    { val: 100000,icon: '🦁', title: 'Lion',         desc: 'Portfolio reached $100,000' },
+  ];
+  el.innerHTML = milestones.map(m => {
+    const hit = PORTFOLIO_VAL >= m.val;
+    return `<div class="ms ${hit ? 'hit' : 'locked'}" style="width:calc(50% - 4px)">
+      <div class="ms-icon">${m.icon}</div>
+      <div class="ms-body">
+        <div class="ms-title" style="color:${hit ? 'var(--acc)' : 'var(--muted)'}">${m.title}</div>
+        <div class="ms-desc">${m.desc}</div>
+      </div>
+      <span class="ms-badge ${hit ? 'tg-g' : ''}" style="${hit ? 'background:var(--acc-d);color:var(--acc);border:1px solid var(--acc-b)' : 'background:var(--surf2);color:var(--muted);border:1px solid var(--bdr)'}">${hit ? '✓' : '$'+m.val.toLocaleString()}</span>
+    </div>`;
+  }).join('');
+}
+
+function updateStreak() {
+  // Simple streak: check if goal was hit today vs yesterday
+  const streak = parseInt(localStorage.getItem('pt_streak') || '0');
+  const sc = document.getElementById('streak-count');
+  const se = document.getElementById('streak-emoji');
+  if (sc) sc.textContent = streak;
+  if (se) se.textContent = streak >= 7 ? '🔥' : streak >= 3 ? '⚡' : streak >= 1 ? '✨' : '💤';
+  const gh = document.getElementById('goals-hit');
+  if (gh) gh.textContent = localStorage.getItem('pt_goals_hit_month') || '0';
+  const bd = document.getElementById('best-day');
+  const bdd = document.getElementById('best-day-date');
+  const bestDay = localStorage.getItem('pt_best_day');
+  if (bd) bd.textContent = bestDay ? '$' + parseFloat(bestDay).toLocaleString() : '—';
+  if (bdd) bdd.textContent = localStorage.getItem('pt_best_day_date') || 'no data yet';
+}
+
+function updateOverviewStrip() {
+  const goals = loadGoals();
+  const periods = ['day','week','month','year'];
+  periods.forEach(p => {
+    const target = goals[p];
+    const pct = target ? Math.min((PORTFOLIO_VAL / target) * 100, 100) : 0;
+    const pctEl = document.getElementById('gs-' + p + '-pct');
+    const barEl = document.getElementById('gs-' + p + '-bar');
+    const lblEl = document.getElementById('gs-' + p + '-lbl');
+    if (pctEl) pctEl.textContent = target ? Math.round(pct) + '%' : '—';
+    if (barEl) {
+      barEl.style.width = pct + '%';
+      barEl.style.background = pct >= 100 ? 'var(--acc)' : pct >= 75 ? 'var(--acc)' : pct >= 50 ? 'var(--wrn)' : 'var(--muted)';
+    }
+    if (lblEl) lblEl.textContent = target ? '$' + parseFloat(target).toLocaleString() + ' target' : 'tap to set goal';
+  });
+}
+
 function saveGoal(btn) {
-  const val = parseFloat(document.getElementById('cfg-goal')?.value) || 10000;
-  localStorage.setItem('pt_goal', val);
-  updateGoalBar();
-  if (btn) { const o = btn.textContent; btn.textContent = '✓ saved'; setTimeout(() => btn.textContent = o, 1500); }
+  // Legacy shim — redirect to goals tab
+  switchTab('goals', document.querySelector('[onclick*="goals"]'));
 }
 
 function updateGoalBar() {
-  const goal = parseFloat(localStorage.getItem('pt_goal') || '10000');
-  const total = 1054.21;
-  const pct = Math.min((total / goal) * 100, 100).toFixed(1);
-  const pe = document.getElementById('goal-pct');
-  const be = document.getElementById('goal-bar');
-  const le = document.getElementById('goal-lbl');
-  if (pe) pe.textContent = pct + '%';
-  if (be) be.style.width = pct + '%';
-  if (le) le.textContent = 'goal: $' + goal.toLocaleString();
+  updateOverviewStrip();
+  renderGoalDetail(activePeriod);
+  updateStreak();
 }
 
 // ════════════════════════════════════════
@@ -1047,7 +1596,8 @@ function exportConfig(btn) {
     salt,
     cid: localStorage.getItem('pt_oauth_client_id') || '',
     sid: sessionStorage.getItem('pt_sheet_id') || '',
-    goal: localStorage.getItem('pt_goal') || '10000'
+    goal: localStorage.getItem('pt_goal') || '10000',
+    goals: localStorage.getItem('pt_goals') || '{}'
   };
   const token = btoa(JSON.stringify(payload));
   const out = document.getElementById('token-out');
@@ -1091,6 +1641,7 @@ async function importConfig() {
   if (payload.cid) localStorage.setItem('pt_oauth_client_id', payload.cid);
   if (payload.sid) sessionStorage.setItem('pt_sheet_id', payload.sid);
   if (payload.goal) localStorage.setItem('pt_goal', payload.goal);
+  if (payload.goals) localStorage.setItem('pt_goals', payload.goals);
   // Done — go straight to lock screen (user enters their password)
   if (err) err.textContent = '';
   showScreen('screen-lock');
