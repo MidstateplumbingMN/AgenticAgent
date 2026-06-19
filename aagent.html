@@ -262,7 +262,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 <div class="screen" id="screen-lock">
   <div class="box" id="lock-box">
     <div class="logo-mark">▸ PORTFOLIO TERMINAL</div>
-    <div class="logo-sub">SECURED ACCESS · <span class="app-version">v2.0.0</span></div>
+    <div class="logo-sub">SECURED ACCESS · <span class="app-version">v2.1.0</span></div>
     <div class="lock-icon">🔒</div>
     <div class="fl" style="margin-top:0">Password</div>
     <input class="fi" type="password" id="l-pw" placeholder="••••••••" autocomplete="current-password">
@@ -309,7 +309,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
     <div class="topbar">
       <span class="page-ttl" id="page-ttl">// overview</span>
       <div class="live-pill"><div class="dot"></div>LIVE · RH_MCP</div>
-      <span class="app-version" style="font-family:var(--mono);font-size:10px;color:var(--muted)">v2.0.0</span>
+      <span class="app-version" style="font-family:var(--mono);font-size:10px;color:var(--muted)">v2.1.0</span>
     </div>
     <div class="content">
 
@@ -744,7 +744,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
             <div style="display:flex;align-items:center;gap:10px">
               <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">AI PORTFOLIO MANAGER</span>
-              <span class="app-version" style="font-family:var(--mono);font-size:11px;font-weight:600;color:var(--acc);background:var(--acc-d);padding:2px 10px;border-radius:4px;border:1px solid var(--acc-b)">v2.0.0</span>
+              <span class="app-version" style="font-family:var(--mono);font-size:11px;font-weight:600;color:var(--acc);background:var(--acc-d);padding:2px 10px;border-radius:4px;border:1px solid var(--acc-b)">v2.1.0</span>
             </div>
             <div style="display:flex;gap:8px;align-items:center">
               <div id="mode-toggle" onclick="toggleLiveMode()" style="display:flex;align-items:center;border-radius:8px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;user-select:none;height:34px">
@@ -955,6 +955,17 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
             <div class="ok-msg" id="copy-ok"></div>
           </div>
           <button class="btn-p" id="gen-token-btn" onclick="exportConfig(this)">generate config token</button>
+        </div>
+        <div class="sec">version history</div>
+        <div class="card" style="max-width:440px;padding:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div>
+              <div style="font-family:var(--mono);font-size:16px;font-weight:600;color:var(--acc)" id="settings-version-num">v2.1.0</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">Full Changelog + Version Tracking</div>
+            </div>
+            <button class="btn-s" style="margin:0;padding:7px 14px;font-size:12px" onclick="showChangelog()">view full changelog</button>
+          </div>
+          <div id="settings-recent-changes" style="display:flex;flex-direction:column;gap:4px"></div>
         </div>
         <div class="sec">about this build</div>
         <div class="card" style="max-width:440px">
@@ -1883,9 +1894,9 @@ function goStep1() {
 // VERSION CONTROL
 // ════════════════════════════════════════
 const APP_VERSION = {
-  number: 'v2.0.0',
+  number: 'v2.1.0',
   date: '2026-06-19',
-  label: 'AI Portfolio Manager Integration',
+  label: 'Full Changelog + Version Tracking',
   changes: [
     'Full AI Portfolio Manager with Market Regime, Macro, Geo Engines',
     'Opportunity Scoring Model — 75+ threshold required',
@@ -1901,10 +1912,92 @@ const APP_VERSION = {
   ]
 };
 
+// ── FULL CHANGELOG ────────────────────────────────────────────
+const CHANGELOG = [
+  { version:'v2.1.0', date:'2026-06-19', type:'minor', label:'Full Changelog + Version Tracking',
+    changes:['Full changelog visible in Settings → Version History','"What's New" modal on first login after each update','Version badge clickable — opens full changelog','localStorage tracks last-seen version — new updates highlighted','All prior releases documented with complete change notes'] },
+  { version:'v2.0.0', date:'2026-06-19', type:'major', label:'AI Portfolio Manager Integration',
+    changes:['Full AI Portfolio Manager system prompt integrated','Market Regime + Macro Economic + Geopolitical Engines','Opportunity Scoring Model — only recommend 75+ scores','Buffett Quality Score on all recommendations','14-day repeat penalty (-15 without catalyst)','Safety override — do nothing if confidence < 60%','SIM mode: paper trades with real-like price simulation','LIVE mode: fully autonomous — auto-executes 75+ scored recs','Strategy alerts: proactive shift recommendations','Autonomous 5-min monitor fires to Claude for live execution','Removed leveraged ETFs (TQQQ/FNGU/SOXL) — rule violation','Max 2 equity + 1 crypto positions enforced','Min 15% cash reserve always maintained'] },
+  { version:'v1.5.0', date:'2026-06-19', type:'minor', label:'Position Mode Controls + Dump Button',
+    changes:['Position mode: 1 per ticker / 1 total / 2 max / confirm each','Dump All button with confirmation modal showing live P&L','botCanBuy() enforces limits on every tick','BUY/SELL prompts use SPEND EXACTLY / SELL EXACTLY labels','SPCX ••••6689 explicitly protected in all order prompts'] },
+  { version:'v1.4.0', date:'2026-06-19', type:'minor', label:'Live Mode Switch + Safety Gate',
+    changes:['SIM / LIVE toggle in Trading Bot tab','Requires typing "LIVE" to confirm activation','Red pulsing banner when live trading active','Bot auto-resets to SIM after every session ends','Cannot switch modes mid-session'] },
+  { version:'v1.3.0', date:'2026-06-19', type:'minor', label:'Trading Bot + Timed Sessions',
+    changes:['Trading Bot tab with multi-stock session support','Timed sessions with tax-adjusted profit goal calculator','PDT rule eliminated June 4 2026 — no restrictions','Live ticker cards with mini price charts','4-slot position system with configurable budget'] },
+  { version:'v1.2.0', date:'2026-06-19', type:'minor', label:'Goals Tab + Multi-Period Tracking',
+    changes:['Goals tab: Daily, Weekly, Monthly, Yearly, Custom','SVG progress rings, streak tracker, 8 portfolio milestones','AI Goal Coach chips','Overview strip: 4-card goal summary'] },
+  { version:'v1.1.0', date:'2026-06-19', type:'minor', label:'Portable Config Token',
+    changes:['Export/import config token for cross-device access','Three-step setup wizard','Import sends to lock screen — password still required'] },
+  { version:'v1.0.0', date:'2026-06-10', type:'major', label:'Initial Release',
+    changes:['Password-protected with SHA-256 + salt + brute-force lockout','15-min inactivity auto-lock','Content Security Policy meta tag','Google OAuth + Sheets integration (token in-memory only)','Live Robinhood data via MCP (accounts ••••6689 + ••••0705)','7 tabs: Overview, Positions, Picks, Smart Money, AI Advisor, Orders, Risk','GitHub Pages at midstateplumbingmn.github.io/AgenticAgent/aagent.html','Google Apps Script for automated sheet setup'] },
+];
+
 function displayVersion() {
   document.querySelectorAll('.app-version').forEach(el => {
     el.textContent = APP_VERSION.number;
+    el.style.cursor = 'pointer';
+    el.title = 'View changelog';
+    el.onclick = (e) => { e.stopPropagation(); showChangelog(); };
   });
+}
+
+function checkVersionUpdate() {
+  const lastSeen = localStorage.getItem('pm_last_version');
+  if (lastSeen !== APP_VERSION.number) {
+    setTimeout(showWhatsNew, 900);
+  }
+}
+
+function markVersionSeen() {
+  localStorage.setItem('pm_last_version', APP_VERSION.number);
+}
+
+function showWhatsNew() {
+  const v = CHANGELOG[0];
+  const modal = document.getElementById('version-modal');
+  const el    = document.getElementById('version-modal-content');
+  if (!modal || !el) return;
+  const tc = v.type === 'major' ? 'var(--acc)' : 'var(--wrn)';
+  el.innerHTML =
+    '<div style="text-align:center;margin-bottom:16px"><div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:6px">WHAT'S NEW</div>' +
+    '<div style="font-family:var(--mono);font-size:26px;font-weight:600;color:var(--acc)">' + v.version + '</div>' +
+    '<div style="font-size:14px;font-weight:500;color:var(--txt);margin-top:4px">' + v.label + '</div>' +
+    '<div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:2px">' + v.date + ' · ' + v.type + ' release</div></div>' +
+    '<div style="display:flex;flex-direction:column;gap:6px">' +
+    v.changes.map(c => '<div style="display:flex;gap:9px;font-size:12px;color:var(--txt2);line-height:1.5;padding:6px 10px;background:var(--surf2);border-radius:6px">' +
+      '<span style="color:var(--acc);flex-shrink:0">✓</span><span>' + c + '</span></div>').join('') +
+    '</div>' +
+    '<div style="margin-top:14px;padding:10px 14px;background:var(--surf2);border-radius:7px;font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center">' +
+    'Click any version badge to view the full changelog</div>';
+  modal.style.display = 'flex';
+  markVersionSeen();
+}
+
+function showChangelog() {
+  const modal = document.getElementById('version-modal');
+  const el    = document.getElementById('version-modal-content');
+  if (!modal || !el) return;
+  el.innerHTML = CHANGELOG.map((v, i) => {
+    const tc = v.type === 'major' ? 'var(--acc)' : 'var(--wrn)';
+    return '<div style="margin-bottom:16px;padding-bottom:16px;' + (i < CHANGELOG.length-1 ? 'border-bottom:1px solid var(--bdr)' : '') + '">' +
+      '<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;flex-wrap:wrap">' +
+      '<span style="font-family:var(--mono);font-size:14px;font-weight:600;color:var(--acc)">' + v.version + '</span>' +
+      '<span style="font-family:var(--mono);font-size:10px;padding:1px 7px;border-radius:3px;background:' + tc + '20;color:' + tc + ';border:1px solid ' + tc + '40">' + v.type.toUpperCase() + '</span>' +
+      (i === 0 ? '<span style="font-family:var(--mono);font-size:10px;padding:1px 7px;border-radius:3px;background:var(--acc-d);color:var(--acc);border:1px solid var(--acc-b)">CURRENT</span>' : '') +
+      '<span style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-left:auto">' + v.date + '</span></div>' +
+      '<div style="font-size:12px;font-weight:500;color:var(--txt);margin-bottom:6px">' + v.label + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:2px">' +
+      v.changes.map(c => '<div style="display:flex;gap:7px;font-size:11px;color:var(--txt2);line-height:1.5">' +
+        '<span style="color:var(--muted);flex-shrink:0">•</span><span>' + c + '</span></div>').join('') +
+      '</div></div>';
+  }).join('');
+  modal.style.display = 'flex';
+  markVersionSeen();
+}
+
+function closeVersionModal() {
+  const m = document.getElementById('version-modal');
+  if (m) m.style.display = 'none';
 }
 
 // ════════════════════════════════════════
@@ -2555,6 +2648,7 @@ function pmInit() {
   pmUpdatePortfolioUI();
   pmRenderPositions();
   displayVersion();
+  checkVersionUpdate();
 }
 
 
@@ -3057,3 +3151,25 @@ function pmRenderStrategyAlerts() {
 // ════════════════════════════════════════
 pmInit();
 checkFirstRun();
+</script>
+
+<!-- VERSION / CHANGELOG MODAL -->
+<div id="version-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:2000;align-items:center;justify-content:center">
+  <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:14px;width:520px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column">
+    <div style="padding:20px 24px 0;border-bottom:1px solid var(--bdr);flex-shrink:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--acc)">▸ PORTFOLIO TERMINAL</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:2px">VERSION HISTORY</div>
+        </div>
+        <button onclick="closeVersionModal()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:4px">✕</button>
+      </div>
+    </div>
+    <div id="version-modal-content" style="padding:20px 24px;overflow-y:auto;flex:1"></div>
+    <div style="padding:14px 24px;border-top:1px solid var(--bdr);display:flex;justify-content:flex-end;flex-shrink:0">
+      <button class="btn-p" style="margin:0;padding:8px 20px;width:auto;font-size:12px" onclick="closeVersionModal()">close</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
