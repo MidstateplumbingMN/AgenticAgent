@@ -704,9 +704,39 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
       <div class="tab" id="tab-bot">
         <div id="bot-app">
 
+          <!-- LIVE MODE CONFIRM MODAL -->
+          <div id="live-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center">
+            <div style="background:var(--surf);border:2px solid var(--dng);border-radius:14px;padding:30px;width:420px;max-width:94vw">
+              <div style="font-family:var(--mono);font-size:16px;font-weight:600;color:var(--dng);margin-bottom:10px">⚡ Enable Live Trading</div>
+              <div style="font-size:13px;color:var(--txt2);line-height:1.8;margin-bottom:14px">
+                Switching to <strong style="color:var(--dng)">LIVE</strong> mode means the bot will send real order requests to Claude chat for execution via Robinhood.<br><br>
+                Every BUY and SELL signal will trigger a real trade on account <strong style="color:var(--acc)">••••0705</strong> using real money.<br><br>
+                <strong style="color:var(--txt)">SPCX in ••••6689 is never touched.</strong>
+              </div>
+              <div style="background:var(--dng-d);border:1px solid var(--dng);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--dng);margin-bottom:16px">
+                ⚠ Keep this Claude chat open. Orders route through here.<br>
+                ⚠ Bot stops automatically if session ends or goal is reached.<br>
+                ⚠ Use Dump All to exit positions at any time.
+              </div>
+              <div class="fl" style="margin-top:0">Type LIVE to confirm</div>
+              <input class="fi" id="live-confirm-input" placeholder="type LIVE" style="margin-bottom:12px;letter-spacing:2px;font-weight:600">
+              <div style="display:flex;gap:8px">
+                <button class="btn-s" style="flex:1;margin:0;text-align:center" onclick="cancelLiveMode()">cancel</button>
+                <button id="live-confirm-btn" style="flex:1;margin:0;background:var(--dng);border:none;border-radius:7px;padding:10px;font-family:var(--mono);font-size:13px;font-weight:600;color:#fff;cursor:pointer;opacity:.4" onclick="confirmLiveMode()" disabled>enable live trading</button>
+              </div>
+            </div>
+          </div>
+
           <!-- TOP CONTROLS -->
           <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end">
-            <div>
+            <!-- LIVE/SIM TOGGLE — most prominent element -->
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <div class="cl" style="margin-bottom:0">Trading Mode</div>
+              <div id="mode-toggle" onclick="toggleLiveMode()" style="display:flex;align-items:center;gap:0;border-radius:8px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;user-select:none;height:38px">
+                <div id="sim-pill" style="padding:0 16px;height:100%;display:flex;align-items:center;font-family:var(--mono);font-size:12px;font-weight:600;background:var(--acc-d);color:var(--acc);transition:all .2s">◈ SIM</div>
+                <div id="live-pill" style="padding:0 16px;height:100%;display:flex;align-items:center;font-family:var(--mono);font-size:12px;font-weight:600;background:var(--surf2);color:var(--muted);transition:all .2s">⚡ LIVE</div>
+              </div>
+            </div>
               <div class="cl" style="margin-bottom:5px">Session Duration</div>
               <select id="bot-duration" class="fi" style="width:140px;padding:8px 10px;font-size:12px">
                 <option value="30">30 minutes</option>
@@ -742,15 +772,49 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
                 <option value="37">37%</option>
               </select>
             </div>
+            <div>
+              <div class="cl" style="margin-bottom:5px">Position Mode</div>
+              <select id="bot-mode" class="fi" style="width:160px;padding:8px 10px;font-size:12px">
+                <option value="one_per_ticker" selected>1 per ticker (recommended)</option>
+                <option value="one_total">1 total (safest)</option>
+                <option value="two_total">2 max total (balanced)</option>
+                <option value="confirm">confirm each (manual)</option>
+              </select>
+            </div>
             <div style="margin-left:auto;display:flex;gap:8px;align-items:flex-end">
               <button id="bot-run-btn" class="btn-p" style="margin:0;padding:10px 22px;width:auto" onclick="botStart()">▶ Start Session</button>
               <button id="bot-stop-btn" class="btn-p" style="margin:0;padding:10px 22px;width:auto;background:var(--dng-d);color:var(--dng);border:1px solid var(--dng);display:none" onclick="botStop()">■ Stop</button>
+              <button id="bot-dump-btn" class="btn-p" style="margin:0;padding:10px 22px;width:auto;background:var(--dng-d);color:var(--dng);border:1px solid var(--dng)" onclick="botDump()">⚠ Dump All</button>
             </div>
+          </div>
+
+          <!-- DUMP CONFIRM MODAL -->
+          <div id="dump-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:center;justify-content:center">
+            <div style="background:var(--surf);border:1px solid var(--dng);border-radius:12px;padding:28px;width:380px;max-width:94vw">
+              <div style="font-family:var(--mono);font-size:14px;font-weight:600;color:var(--dng);margin-bottom:8px">⚠ Dump All Positions</div>
+              <div style="font-size:13px;color:var(--txt2);line-height:1.7;margin-bottom:6px">This will market-sell ALL open bot positions immediately at current price — profit OR loss. SPCX in account ••••6689 is NOT affected.</div>
+              <div id="dump-position-list" style="background:var(--surf2);border-radius:7px;padding:10px 14px;font-family:var(--mono);font-size:12px;margin-bottom:14px;color:var(--txt2)">loading...</div>
+              <div style="display:flex;gap:8px">
+                <button class="btn-s" style="flex:1;margin:0;text-align:center" onclick="document.getElementById('dump-modal').style.display='none'">cancel</button>
+                <button style="flex:1;margin:0;background:var(--dng);border:none;border-radius:7px;padding:10px;font-family:var(--mono);font-size:13px;font-weight:600;color:#fff;cursor:pointer" onclick="botDumpConfirmed()">sell everything now</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- LIVE MODE WARNING BANNER — hidden in sim mode -->
+          <div id="live-warning-banner" style="display:none;padding:10px 16px;background:var(--dng-d);border:1px solid var(--dng);border-radius:8px;margin-bottom:12px;display:none;align-items:center;gap:12px">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--dng);animation:pulse 1s infinite;flex-shrink:0"></div>
+            <span style="font-family:var(--mono);font-size:12px;color:var(--dng);font-weight:600">LIVE TRADING ACTIVE</span>
+            <span style="font-size:12px;color:var(--txt2)">Real orders firing on ••••0705 — keep this chat open</span>
+            <span style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted)">SPCX ••••6689 protected</span>
           </div>
 
           <!-- GOAL BANNER -->
           <div id="bot-goal-banner" style="padding:10px 16px;background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;display:flex;gap:24px;margin-bottom:16px;font-family:var(--mono);font-size:12px;flex-wrap:wrap">
+            <span id="bb-livemode" style="padding:2px 10px;border-radius:4px;font-weight:600;background:var(--acc-d);color:var(--acc);border:1px solid var(--acc-b)">◈ SIM</span>
             <span>Budget: <span id="bb-budget" style="color:var(--acc)">$20.00</span></span>
+            <span>Per ticker: <span id="bb-slot" style="color:var(--acc)">$5.00</span></span>
+            <span>Mode: <span id="bb-mode" style="color:var(--wrn)">1 per ticker</span></span>
             <span>Net goal: <span id="bb-netgoal" style="color:var(--acc)">$1.00</span></span>
             <span>Gross needed: <span id="bb-gross" style="color:var(--wrn)">$1.28</span></span>
             <span>Tax @ <span id="bb-taxpct">22</span>%: <span id="bb-tax" style="color:var(--dng)">$0.28</span></span>
@@ -1776,6 +1840,187 @@ function goStep1() {
   document.getElementById('si1').classList.add('active');
 }
 
+// ── LIVE MODE ─────────────────────────────────────────────────
+let botLiveMode = false; // always starts false — must be explicitly enabled
+
+function toggleLiveMode() {
+  if (botState.running) {
+    const statusEl = document.getElementById('bot-status-msg');
+    if (statusEl) {
+      statusEl.style.display='block';statusEl.style.background='var(--wrn-d)';
+      statusEl.style.border='1px solid var(--wrn)';statusEl.style.color='var(--wrn)';
+      statusEl.textContent='⚠ Stop the session before switching trading mode.';
+      setTimeout(()=>{statusEl.style.display='none';},3000);
+    }
+    return;
+  }
+  if (!botLiveMode) {
+    const input=document.getElementById('live-confirm-input');
+    if(input)input.value='';
+    const btn=document.getElementById('live-confirm-btn');
+    if(btn){btn.disabled=true;btn.style.opacity='.4';}
+    const modal=document.getElementById('live-modal');
+    if(modal)modal.style.display='flex';
+    setTimeout(()=>document.getElementById('live-confirm-input')?.focus(),100);
+  } else {
+    botLiveMode=false;
+    updateLiveModeUI();
+  }
+}
+
+function cancelLiveMode(){
+  const modal=document.getElementById('live-modal');
+  if(modal)modal.style.display='none';
+}
+
+function confirmLiveMode(){
+  const input=document.getElementById('live-confirm-input');
+  if(!input||input.value.trim().toUpperCase()!=='LIVE')return;
+  const modal=document.getElementById('live-modal');
+  if(modal)modal.style.display='none';
+  botLiveMode=true;
+  updateLiveModeUI();
+  botAddLog('MODE','BOT',0,null,'LIVE TRADING ENABLED — real orders will fire');
+}
+
+function updateLiveModeUI(){
+  const simPill=document.getElementById('sim-pill');
+  const livePill=document.getElementById('live-pill');
+  const banner=document.getElementById('live-warning-banner');
+  const bbMode=document.getElementById('bb-livemode');
+  const botApp=document.getElementById('bot-app');
+  if(botLiveMode){
+    if(simPill){simPill.style.background='var(--surf2)';simPill.style.color='var(--muted)';}
+    if(livePill){livePill.style.background='var(--dng)';livePill.style.color='#fff';}
+    if(banner){banner.style.display='flex';}
+    if(bbMode){bbMode.textContent='⚡ LIVE';bbMode.style.background='var(--dng-d)';bbMode.style.color='var(--dng)';bbMode.style.borderColor='var(--dng)';}
+    if(botApp){botApp.style.outline='2px solid rgba(255,107,53,.3)';botApp.style.borderRadius='8px';}
+  } else {
+    if(simPill){simPill.style.background='var(--acc-d)';simPill.style.color='var(--acc)';}
+    if(livePill){livePill.style.background='var(--surf2)';livePill.style.color='var(--muted)';}
+    if(banner){banner.style.display='none';}
+    if(bbMode){bbMode.textContent='◈ SIM';bbMode.style.background='var(--acc-d)';bbMode.style.color='var(--acc)';bbMode.style.borderColor='var(--acc-b)';}
+    if(botApp){botApp.style.outline='none';}
+  }
+}
+
+// Wire confirm input
+document.addEventListener('DOMContentLoaded',()=>{
+  const inp=document.getElementById('live-confirm-input');
+  if(inp)inp.addEventListener('input',function(){
+    const btn=document.getElementById('live-confirm-btn');
+    if(!btn)return;
+    const valid=this.value.trim().toUpperCase()==='LIVE';
+    btn.disabled=!valid;btn.style.opacity=valid?'1':'.4';
+  });
+});
+
+const MODE_LABELS = {
+  'one_per_ticker':'1 per ticker',
+  'one_total':'1 total',
+  'two_total':'2 max total',
+  'confirm':'confirm each',
+};
+
+function botCanBuy(ticker) {
+  const mode = document.getElementById('bot-mode')?.value || 'one_per_ticker';
+  const openPositions = Object.keys(botState.positions);
+  const openCount = openPositions.length;
+
+  // SPCX is always protected — never in bot positions
+  if (ticker === 'SPCX') return false;
+
+  switch(mode) {
+    case 'one_per_ticker':
+      // Max one open position per ticker — if this ticker already has one, block
+      return !botState.positions[ticker];
+
+    case 'one_total':
+      // Only one open position total across all tickers
+      return openCount === 0;
+
+    case 'two_total':
+      // Max two open positions total, and not already holding this ticker
+      return openCount < 2 && !botState.positions[ticker];
+
+    case 'confirm':
+      // Same as one_per_ticker but routes to Claude for manual confirm first
+      return !botState.positions[ticker];
+
+    default:
+      return !botState.positions[ticker];
+  }
+}
+
+function botDump() {
+  const openPositions = Object.keys(botState.positions);
+  const listEl = document.getElementById('dump-position-list');
+  if (!listEl) return;
+
+  if (openPositions.length === 0) {
+    listEl.innerHTML = '<span style="color:var(--muted)">No open bot positions to dump.<br>SPCX in ••••6689 is always protected.</span>';
+  } else {
+    listEl.innerHTML = openPositions.map(t => {
+      const pos = botState.positions[t];
+      const price = botState.prices[t] || pos.bp;
+      const pnl = (price - pos.bp) * pos.shares;
+      const pnlStr = (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(4);
+      const col = pnl >= 0 ? 'var(--acc)' : 'var(--dng)';
+      return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--bdr)">
+        <span style="color:var(--txt)">${t}</span>
+        <span>${pos.shares.toFixed(4)} shares @ $${pos.bp.toFixed(2)}</span>
+        <span style="color:${col}">${pnlStr}</span>
+      </div>`;
+    }).join('') + '<div style="margin-top:8px;color:var(--muted)">SPCX ••••6689 — NOT affected</div>';
+  }
+
+  const modal = document.getElementById('dump-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function botDumpConfirmed() {
+  const modal = document.getElementById('dump-modal');
+  if (modal) modal.style.display = 'none';
+
+  const openPositions = Object.keys(botState.positions);
+  if (openPositions.length === 0) {
+    botAddLog('DUMP','BOT',0,null,'no open positions to dump');
+    return;
+  }
+
+  openPositions.forEach(t => {
+    const pos = botState.positions[t];
+    const price = botState.prices[t] || pos.bp;
+    const pnl = (price - pos.bp) * pos.shares;
+    botState.grossProfit += pnl;
+    if (pnl >= 0) botState.wins++; else botState.losses++;
+    botState.trades++;
+    botAddLog('DUMP',t,price,pnl,'manual dump');
+
+    // Fire sell order to Claude
+    sendPrompt(
+      'EMERGENCY DUMP ORDER\n' +
+      '─────────────────────────────\n' +
+      'Symbol       : ' + t + '\n' +
+      'Action       : SELL (market order — immediate)\n' +
+      'SELL EXACTLY : ' + pos.shares.toFixed(6) + ' shares — ALL of them\n' +
+      'Account      : ••••0705 (agentic) — NOT ••••6689 (SPCX protected)\n' +
+      'Reason       : Manual dump — user requested immediate exit\n' +
+      '─────────────────────────────\n' +
+      'Steps: 1) get_equity_quotes for ' + t + ' ' +
+      '2) review_equity_order for ' + pos.shares.toFixed(6) + ' shares ' +
+      '3) place_equity_order immediately\n' +
+      'Confirm fill price and P&L.'
+    );
+
+    delete botState.positions[t];
+  });
+
+  botUpdateStats();
+  botStop(false);
+  botAddLog('DUMP','DONE',0,null,'all positions submitted for liquidation');
+}
+
 // ════════════════════════════════════════
 // TRADING BOT ENGINE
 // ════════════════════════════════════════
@@ -1800,6 +2045,10 @@ function botRecalcGoal(){
   const dur=parseInt(document.getElementById('bot-duration')?.value)||60;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   set('bb-budget','$'+budget.toFixed(2));
+  set('bb-slot','$'+(budget/BOT_WATCHLIST.length).toFixed(2));
+  const modeEl = document.getElementById('bb-mode');
+  const modeVal = document.getElementById('bot-mode')?.value || 'one_per_ticker';
+  if (modeEl) modeEl.textContent = MODE_LABELS[modeVal] || modeVal;
   set('bb-netgoal','$'+netGoal.toFixed(2));
   set('bb-gross','$'+gross.toFixed(2));
   set('bb-tax','$'+taxAmt.toFixed(2));
@@ -1929,8 +2178,22 @@ function botTick(){
         if(gUsd>=0)botState.wins++;else botState.losses++;
         botAddLog('SELL',t,price,gUsd,reason);
         delete botState.positions[t];
-        // Route to Claude for real order
-        sendPrompt('BOT SELL: '+t+' market order on account ••••0705 — '+pos.shares.toFixed(4)+' shares. Reason: '+reason+'. Please execute and confirm fill.');
+        // Route to Claude — only in live mode
+        if(botLiveMode) sendPrompt(
+          'BOT AUTO-SELL REQUEST\n' +
+          '─────────────────────────────\n' +
+          'Symbol      : ' + t + '\n' +
+          'Action      : SELL (market order)\n' +
+          'SELL EXACTLY: ' + pos.shares.toFixed(6) + ' shares — this is the SHARE COUNT, sell all of them\n' +
+          'Bought at   : $' + pos.bp.toFixed(4) + ' · current ~$' + price.toFixed(4) + '\n' +
+          'Account     : ••••0705 (agentic)\n' +
+          'Reason      : ' + reason + '\n' +
+          '─────────────────────────────\n' +
+          'Steps: 1) get_equity_quotes for ' + t + ' to confirm current price ' +
+          '2) review_equity_order for ' + pos.shares.toFixed(6) + ' shares ' +
+          '3) place_equity_order\n' +
+          'Confirm fill price and P&L.'
+        );
         if(botState.grossProfit>=botState.grossTarget){
           const net=botState.grossProfit*(1-botState.taxPct/100);
           const statusEl=document.getElementById('bot-status-msg');
@@ -1941,13 +2204,49 @@ function botTick(){
     }
     if(!pos&&botState.highs[t]){
       const dip=(botState.highs[t]-price)/botState.highs[t];
-      if(dip>=cfg.dip){
+      const mode = document.getElementById('bot-mode')?.value || 'one_per_ticker';
+      if(dip>=cfg.dip && botCanBuy(t)){
         const shares=+(botState.slotSize/price).toFixed(6);
         botState.positions[t]={bp:price,shares};
         botState.trades++;
-        botAddLog('BUY',t,price,null,'dip '+(dip*100).toFixed(2)+'%');
-        // Route to Claude for real order
-        sendPrompt('BOT BUY: '+t+' market order on account ••••0705 — $'+botState.slotSize.toFixed(2)+'. Reason: dip '+(dip*100).toFixed(2)+'% below session high. Please execute and confirm fill price and shares.');
+        const slotAmt=botState.slotSize.toFixed(2);
+        const estShares=shares.toFixed(6);
+
+        if(mode === 'confirm') {
+          // Confirm mode — ask Claude before executing
+          botAddLog('PENDING BUY',t,price,null,'awaiting confirm · dip '+(dip*100).toFixed(2)+'%');
+          if(botLiveMode) sendPrompt(
+            'BOT BUY REQUEST — AWAITING YOUR CONFIRMATION\n' +
+            '─────────────────────────────\n' +
+            'Symbol        : ' + t + '\n' +
+            'Action        : BUY (market order)\n' +
+            'SPEND EXACTLY : $' + slotAmt + ' — DOLLAR AMOUNT, not share price\n' +
+            'Est. shares   : ~' + estShares + '\n' +
+            'Account       : ••••0705 (agentic)\n' +
+            'Reason        : dip ' + (dip*100).toFixed(2) + '% below session high\n' +
+            '─────────────────────────────\n' +
+            'Reply "YES execute" to place this order or "NO skip" to cancel it.'
+          );
+        } else {
+          // Auto-execute modes
+          botAddLog((botLiveMode?'BUY':'SIM BUY'),t,price,null,'$'+slotAmt+' slot · dip '+(dip*100).toFixed(2)+'%');
+          if(botLiveMode) sendPrompt(
+            'BOT AUTO-BUY REQUEST\n' +
+            '─────────────────────────────\n' +
+            'Symbol        : ' + t + '\n' +
+            'Action        : BUY (market order)\n' +
+            'SPEND EXACTLY : $' + slotAmt + ' — this is the DOLLAR AMOUNT to spend, NOT the share price\n' +
+            'Est. shares   : ~' + estShares + ' (= $' + slotAmt + ' ÷ current price)\n' +
+            'Account       : ••••0705 (agentic)\n' +
+            'Reason        : dip ' + (dip*100).toFixed(2) + '% below session high\n' +
+            '─────────────────────────────\n' +
+            'Steps: 1) get_equity_quotes for ' + t + ' to confirm current price ' +
+            '2) calculate shares = $' + slotAmt + ' ÷ price (DO NOT spend more than $' + slotAmt + ') ' +
+            '3) review_equity_order ' +
+            '4) place_equity_order\n' +
+            'Confirm fill price and exact shares purchased.'
+          );
+        }
       }
     }
     botUpdateCard(cfg,price);
@@ -1964,7 +2263,10 @@ function botUpdateTimer(){
 function botStart(){
   botRecalcGoal();
   Object.assign(botState,{running:true,startTime:Date.now(),grossProfit:0,wins:0,losses:0,trades:0,positions:{},prices:{},highs:{},lows:{},histories:{}});
-  botState.slotSize=botState.budget/BOT_WATCHLIST.length;
+  botState.slotSize = Math.min(
+    parseFloat((botState.budget / BOT_WATCHLIST.length).toFixed(2)),
+    botState.budget  // hard cap — can never exceed total budget
+  );
   BOT_WATCHLIST.forEach(cfg=>{
     botState.prices[cfg.ticker]=cfg.seed;
     botState.highs[cfg.ticker]=cfg.seed;
@@ -1976,13 +2278,15 @@ function botStart(){
   const statusEl=document.getElementById('bot-status-msg');if(statusEl){statusEl.style.display='none';statusEl.textContent='';}
   document.getElementById('bot-run-btn').style.display='none';
   document.getElementById('bot-stop-btn').style.display='block';
-  botAddLog('START','BOT',0,null,'$'+botState.budget+' · '+botState.durationMs/60000+'min · gross target $'+botState.grossTarget.toFixed(2));
+  botAddLog('START','BOT',0,null,'$'+botState.budget+' · '+botState.durationMs/60000+'min · gross target $'+botState.grossTarget.toFixed(2)+' · '+(botLiveMode?'LIVE':'SIM')+' mode');
   botState.interval=setInterval(botTick,5000);
   botState.timerInterval=setInterval(botUpdateTimer,1000);
   resetIdle();
 }
 function botStop(timeUp){
   botState.running=false;
+  // Reset to SIM after every session ends — must re-enable live intentionally
+  if(botLiveMode){ botLiveMode=false; updateLiveModeUI(); botAddLog('MODE','BOT',0,null,'auto-reset to SIM after session'); }
   clearInterval(botState.interval);clearInterval(botState.timerInterval);
   document.getElementById('bot-run-btn').style.display='block';
   document.getElementById('bot-stop-btn').style.display='none';
@@ -1990,7 +2294,7 @@ function botStop(timeUp){
   const net=botState.grossProfit*(1-botState.taxPct/100);
   botAddLog('END','BOT',0,botState.grossProfit,timeUp?'time up · net $'+net.toFixed(4):'goal reached · net $'+net.toFixed(4));
 }
-['bot-duration','bot-budget','bot-goal','bot-tax'].forEach(id=>{
+['bot-duration','bot-budget','bot-goal','bot-tax','bot-mode'].forEach(id=>{
   const el=document.getElementById(id);
   if(el){el.addEventListener('change',botRecalcGoal);el.addEventListener('input',botRecalcGoal);}
 });
