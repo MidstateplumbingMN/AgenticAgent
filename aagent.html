@@ -1081,7 +1081,6 @@ function setupFinish(skip) {
 // ════════════════════════════════════════
 const MAX_ATT = 5, BASE_LO = 30;
 let loInterval = null;
-
 function getAttState() {
   return {
     att: parseInt(sessionStorage.getItem('pt_att') || '0'),
@@ -1200,14 +1199,12 @@ function lockApp() {
 }
 
 document.getElementById('l-pw')?.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
-
 // ════════════════════════════════════════
 // INACTIVITY AUTO-LOCK (15 min)
 // ════════════════════════════════════════
 const IDLE_MS = 15 * 60 * 1000;
 const WARN_MS = 14 * 60 * 1000;
 let idleTimer = null, warnTimer = null, warnCDInt = null;
-
 function resetIdle() {
   if (!sessionStorage.getItem('pt_unlocked')) return;
   clearTimeout(idleTimer);
@@ -1279,7 +1276,6 @@ async function changePw() {
 let gToken = null;  // NEVER persisted — memory only
 let gClient = null;
 const logCache = [];
-
 function tryInitGoogle() {
   const cid = localStorage.getItem('pt_oauth_client_id');
   if (!cid) { updateSheetsUI(false, 'no client ID — configure in Settings'); return; }
@@ -1370,73 +1366,64 @@ async function logGoal() {
 function sanitize(str) {
   return (str || '').trim()
     .slice(0, 200)
-    .replace(/[<>"'`]/g, '')        // strip HTML injection chars
-    .replace(/[\r\n]/g, ' ')         // no newlines
-    .replace(/javascript:/gi, '')    // strip js: URIs
-    .replace(/on\w+\s*=/gi, '')      // strip event handlers
-    .replace(/\.\.\//g, '');         // strip path traversal
+    .replace(/[<>"'`]/g, '')
+    .replace(/[\r\n]/g, ' ')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+\s*=/gi, '')
+    .replace(/\.\.\//, '');         // strip path traversal
 }
-
 // ════════════════════════════════════════
 // APP NAVIGATION
 // ════════════════════════════════════════
 function switchTab(name, el) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
-  document.getElementById('tab-' + name)?.classList.add('active');
-  if (el) el.classList.add('active');
-  document.getElementById('page-ttl').textContent = '// ' + name;
-  resetIdle();
+document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+document.getElementById('tab-' + name)?.classList.add('active');
+if (el) el.classList.add('active');
+document.getElementById('page-ttl').textContent = '// ' + name;
+resetIdle();
 }
-
 // ════════════════════════════════════════
 // TRADE EXECUTION
 // Two-step: review → confirm → place
 // All via sendPrompt → Claude → Robinhood MCP
 // ════════════════════════════════════════
 let pendingTrade = null; // holds parsed trade for confirm step
-
 function toggleLimitField() {
-  const type = document.getElementById('t-type')?.value;
-  const lf = document.getElementById('limit-field');
-  const sf = document.getElementById('stop-field');
-  if (lf) lf.style.display = (type === 'limit' || type === 'stop_limit') ? 'block' : 'none';
-  if (sf) sf.style.display = (type === 'stop_market' || type === 'stop_limit') ? 'block' : 'none';
+const type = document.getElementById('t-type')?.value;
+const lf = document.getElementById('limit-field');
+const sf = document.getElementById('stop-field');
+if (lf) lf.style.display = (type === 'limit' || type === 'stop_limit') ? 'block' : 'none';
+if (sf) sf.style.display = (type === 'stop_market' || type === 'stop_limit') ? 'block' : 'none';
 }
-
 function reviewTrade() {
-  const sym   = sanitize(document.getElementById('t-sym')?.value || '').toUpperCase();
-  const side  = document.getElementById('t-side')?.value;
-  const type  = document.getElementById('t-type')?.value;
-  const amt   = parseFloat(document.getElementById('t-amt')?.value);
-  const limit = parseFloat(document.getElementById('t-limit')?.value);
-  const stop  = parseFloat(document.getElementById('t-stop')?.value);
-  const err   = document.getElementById('t-err');
-
-  err.textContent = '';
-  if (!sym)           { err.textContent = 'enter a symbol'; return; }
-  if (!sym.match(/^[A-Z]{1,5}$/)) { err.textContent = 'invalid symbol'; return; }
-  if (!amt || amt < 1){ err.textContent = 'enter a dollar amount (min $1)'; return; }
-  if ((type === 'limit' || type === 'stop_limit') && !limit) { err.textContent = 'enter a limit price'; return; }
-  if ((type === 'stop_market' || type === 'stop_limit') && !stop) { err.textContent = 'enter a stop price'; return; }
-
-  pendingTrade = { sym, side, type, amt, limit, stop };
-
-  // Build a natural-language review prompt for Claude
-  let desc = `${side.toUpperCase()} $${amt} of ${sym} — ${type.replace('_',' ')} order`;
-  if (limit) desc += ` at limit $${limit}`;
-  if (stop)  desc += ` with stop $${stop}`;
-
-  const prompt =
-    `Trade review request from the dashboard: ${desc}. ` +
-    `Account ••••0705 (agentic). ` +
-    `Please: 1) get the current ${sym} price, 2) run review_equity_order, 3) show me the estimated cost, shares, and any alerts. ` +
-    `Reply with REVIEW_RESULT: followed by a JSON block like: ` +
-    `{"symbol":"${sym}","side":"${side}","type":"${type}","dollar_amount":"${amt.toFixed(2)}"` +
+const sym   = sanitize(document.getElementById('t-sym')?.value || '').toUpperCase();
+const side  = document.getElementById('t-side')?.value;
+const type  = document.getElementById('t-type')?.value;
+const amt   = parseFloat(document.getElementById('t-amt')?.value);
+const limit = parseFloat(document.getElementById('t-limit')?.value);
+const stop  = parseFloat(document.getElementById('t-stop')?.value);
+const err   = document.getElementById('t-err');
+err.textContent = '';
+if (!sym)           { err.textContent = 'enter a symbol'; return; }
+if (!sym.match(/^[A-Z]{1,5}$/)) { err.textContent = 'invalid symbol'; return; }
+if (!amt || amt < 1){ err.textContent = 'enter a dollar amount (min $1)'; return; }
+if ((type === 'limit' || type === 'stop_limit') && !limit) { err.textContent = 'enter a limit price'; return; }
+if ((type === 'stop_market' || type === 'stop_limit') && !stop) { err.textContent = 'enter a stop price'; return; }
+pendingTrade = { sym, side, type, amt, limit, stop };
+// Build a natural-language review prompt for Claude
+let desc = `${side.toUpperCase()} $${amt} of ${sym} — ${type.replace('_',' ')} order`;
+if (limit) desc += ` at limit $${limit}`;
+if (stop)  desc += ` with stop $${stop}`;
+const prompt =
+`Trade review request from the dashboard: ${desc}. ` +
+`Account ••••0705 (agentic). ` +
+`Please: 1) get the current ${sym} price, 2) run review_equity_order, 3) show me the estimated cost, shares, and any alerts. ` +
+`Reply with REVIEW_RESULT: followed by a JSON block like: ` +
+`{"symbol":"${sym}","side":"${side}","type":"${type}","dollar_amount":"${amt.toFixed(2)}"` +
     (limit ? `,"limit_price":"${limit.toFixed(2)}"` : '') +
     (stop  ? `,"stop_price":"${stop.toFixed(2)}"` : '') +
     `,"estimated_cost":"?","shares":"?","price":"?","alerts":"none"}`;
-
   // Show review panel with loading state
   document.getElementById('trade-review').style.display = 'block';
   document.getElementById('trade-result').style.display = 'none';
@@ -1449,110 +1436,97 @@ function reviewTrade() {
      </div>`;
   document.getElementById('review-alerts').textContent = '';
   document.getElementById('confirm-btn').disabled = true;
-
   sendPrompt(prompt);
-
   // Watch for Claude's response via a polling approach on the review panel
-  // Claude will reply in chat — user can also click confirm directly after reviewing
-  // Enable confirm after 3s (Claude response time)
-  setTimeout(() => {
-    const btn = document.getElementById('confirm-btn');
-    if (btn) btn.disabled = false;
-    const rc = document.getElementById('review-content');
-    if (rc && rc.innerHTML.includes('reviewing')) {
-      rc.innerHTML = reviewHTML(pendingTrade);
-    }
-    document.getElementById('review-alerts').textContent =
-      '⚠ Check Claude chat above for full review details before confirming.';
-  }, 3000);
+// Claude will reply in chat — user can also click confirm directly after reviewing
+// Enable confirm after 3s (Claude response time)
+setTimeout(() => {
+const btn = document.getElementById('confirm-btn');
+if (btn) btn.disabled = false;
+const rc = document.getElementById('review-content');
+if (rc && rc.innerHTML.includes('reviewing')) {
+rc.innerHTML = reviewHTML(pendingTrade);
 }
-
+document.getElementById('review-alerts').textContent =
+'⚠ Check Claude chat above for full review details before confirming.';
+}, 3000);
+}
 function reviewHTML(t) {
-  const typeLabel = t.type.replace(/_/g,' ').toUpperCase();
-  return `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:var(--mono);font-size:12px">
-      <div style="background:var(--surf2);border-radius:6px;padding:8px">
-        <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Symbol</div>
-        <div style="color:var(--txt);font-size:15px;font-weight:600">${t.sym}</div>
-      </div>
-      <div style="background:var(--surf2);border-radius:6px;padding:8px">
-        <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Side</div>
-        <div style="color:${t.side==='buy'?'var(--acc)':'var(--dng)'};font-size:15px;font-weight:600">${t.side.toUpperCase()}</div>
-      </div>
-      <div style="background:var(--surf2);border-radius:6px;padding:8px">
-        <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Type</div>
-        <div style="color:var(--txt)">${typeLabel}</div>
-      </div>
-      <div style="background:var(--surf2);border-radius:6px;padding:8px">
-        <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Amount</div>
-        <div style="color:var(--txt)">$${t.amt.toFixed(2)}</div>
-      </div>
-      ${t.limit ? `<div style="background:var(--surf2);border-radius:6px;padding:8px"><div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Limit</div><div style="color:var(--txt)">$${t.limit.toFixed(2)}</div></div>` : ''}
-      ${t.stop  ? `<div style="background:var(--surf2);border-radius:6px;padding:8px"><div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Stop</div><div style="color:var(--txt)">$${t.stop.toFixed(2)}</div></div>` : ''}
-    </div>
-    <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:10px">Review Claude chat above for current price, estimated shares, and pre-trade alerts.</div>`;
+const typeLabel = t.type.replace(/_/g,' ').toUpperCase();
+return `
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:var(--mono);font-size:12px">
+<div style="background:var(--surf2);border-radius:6px;padding:8px">
+<div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Symbol</div>
+<div style="color:var(--txt);font-size:15px;font-weight:600">${t.sym}</div>
+</div>
+<div style="background:var(--surf2);border-radius:6px;padding:8px">
+<div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Side</div>
+<div style="color:${t.side==='buy'?'var(--acc)':'var(--dng)'};font-size:15px;font-weight:600">${t.side.toUpperCase()}</div>
+</div>
+<div style="background:var(--surf2);border-radius:6px;padding:8px">
+<div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Type</div>
+<div style="color:var(--txt)">${typeLabel}</div>
+</div>
+<div style="background:var(--surf2);border-radius:6px;padding:8px">
+<div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Amount</div>
+<div style="color:var(--txt)">$${t.amt.toFixed(2)}</div>
+</div>
+${t.limit ? `<div style="background:var(--surf2);border-radius:6px;padding:8px"><div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Limit</div><div style="color:var(--txt)">$${t.limit.toFixed(2)}</div></div>` : ''}
+${t.stop  ? `<div style="background:var(--surf2);border-radius:6px;padding:8px"><div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Stop</div><div style="color:var(--txt)">$${t.stop.toFixed(2)}</div></div>` : ''}
+</div>
+<div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:10px">Review Claude chat above for current price, estimated shares, and pre-trade alerts.</div>`;
 }
-
 function cancelReview() {
-  pendingTrade = null;
-  document.getElementById('trade-review').style.display = 'none';
-  document.getElementById('trade-result').style.display = 'none';
-  document.getElementById('t-err').textContent = '';
+pendingTrade = null;
+document.getElementById('trade-review').style.display = 'none';
+document.getElementById('trade-result').style.display = 'none';
+document.getElementById('t-err').textContent = '';
 }
-
 function confirmTrade() {
-  if (!pendingTrade) return;
-  const t = pendingTrade;
-
-  let desc = `${t.side.toUpperCase()} $${t.amt.toFixed(2)} of ${t.sym}`;
-  if (t.limit) desc += ` limit $${t.limit.toFixed(2)}`;
-  if (t.stop)  desc += ` stop $${t.stop.toFixed(2)}`;
-
-  const prompt =
-    `CONFIRMED — please place this order now on account ••••0705 (agentic): ` +
-    `${desc}, type: ${t.type.replace('_',' ')}, dollar_amount: ${t.amt.toFixed(2)}` +
-    (t.limit ? `, limit_price: ${t.limit.toFixed(2)}` : '') +
-    (t.stop  ? `, stop_price: ${t.stop.toFixed(2)}`  : '') +
-    `. Use place_equity_order with a fresh ref_id UUID. ` +
-    `After placing, reply with ORDER_PLACED: followed by the order ID, status, and filled price if available.`;
-
-  // Show placing state
-  const rc = document.getElementById('result-content');
-  document.getElementById('trade-result').style.display = 'block';
-  rc.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--muted)"><div style="width:12px;height:12px;border:2px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite"></div>placing order...</div>`;
-
-  document.getElementById('confirm-btn').disabled = true;
-  sendPrompt(prompt);
-
-  // Update result panel after Claude responds
-  setTimeout(() => {
-    rc.innerHTML = `
-      <div style="font-family:var(--mono);font-size:12px;color:var(--acc);margin-bottom:8px">✓ order sent to Robinhood</div>
-      <div style="font-size:12px;color:var(--txt2);line-height:1.7">${desc}<br>Check Claude chat above for order ID and fill confirmation.</div>
-      <button class="chip" style="margin-top:10px" onclick="sendPrompt('Check the status of my most recent order on account ••••0705.')">check order status ↗</button>`;
-    // Log to sheets
-    logOrderEntry(t);
-  }, 4000);
-
-  pendingTrade = null;
-  document.getElementById('trade-review').style.display = 'none';
+if (!pendingTrade) return;
+const t = pendingTrade;
+let desc = `${t.side.toUpperCase()} $${t.amt.toFixed(2)} of ${t.sym}`;
+if (t.limit) desc += ` limit $${t.limit.toFixed(2)}`;
+if (t.stop)  desc += ` stop $${t.stop.toFixed(2)}`;
+const prompt =
+`CONFIRMED — please place this order now on account ••••0705 (agentic): ` +
+`${desc}, type: ${t.type.replace('_',' ')}, dollar_amount: ${t.amt.toFixed(2)}` +
+(t.limit ? `, limit_price: ${t.limit.toFixed(2)}` : '') +
+(t.stop  ? `, stop_price: ${t.stop.toFixed(2)}`  : '') +
+`. Use place_equity_order with a fresh ref_id UUID. ` +
+`After placing, reply with ORDER_PLACED: followed by the order ID, status, and filled price if available.`;
+// Show placing state
+const rc = document.getElementById('result-content');
+document.getElementById('trade-result').style.display = 'block';
+rc.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--muted)"><div style="width:12px;height:12px;border:2px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite"></div>placing order...</div>`;
+document.getElementById('confirm-btn').disabled = true;
+sendPrompt(prompt);
+// Update result panel after Claude responds
+setTimeout(() => {
+rc.innerHTML = `
+<div style="font-family:var(--mono);font-size:12px;color:var(--acc);margin-bottom:8px">✓ order sent to Robinhood</div>
+<div style="font-size:12px;color:var(--txt2);line-height:1.7">${desc}<br>Check Claude chat above for order ID and fill confirmation.</div>
+<button class="chip" style="margin-top:10px" onclick="sendPrompt('Check the status of my most recent order on account ••••0705.')">check order status ↗</button>`;
+// Log to sheets
+logOrderEntry(t);
+}, 4000);
+pendingTrade = null;
+document.getElementById('trade-review').style.display = 'none';
 }
-
 async function logOrderEntry(t) {
-  const ts = new Date().toISOString();
-  const ok = await logToSheet('Orders', [ts, t.sym, t.side.toUpperCase(), t.type, '$'+t.amt.toFixed(2), t.limit||'', t.stop||'', '••••0705', 'placed']);
-  addLog('ORDER', `${t.side.toUpperCase()} $${t.amt} ${t.sym} — ${ok ? 'logged ✓' : 'saved locally'}`);
+const ts = new Date().toISOString();
+const ok = await logToSheet('Orders', [ts, t.sym, t.side.toUpperCase(), t.type, '$'+t.amt.toFixed(2), t.limit||'', t.stop||'', '••••0705', 'placed']);
+addLog('ORDER', `${t.side.toUpperCase()} $${t.amt} ${t.sym} — ${ok ? 'logged ✓' : 'saved locally'}`);
 }
-
 // ════════════════════════════════════════
 // SETTINGS
 // ════════════════════════════════════════
 function loadSettings() {
-  const cid  = localStorage.getItem('pt_oauth_client_id') || '';
-  const sid  = sessionStorage.getItem('pt_sheet_id') || '';
-  const goal = localStorage.getItem('pt_goal') || '10000';
-  const cidEl  = document.getElementById('cfg-cid');
-  const sidEl  = document.getElementById('cfg-sid');
+const cid  = localStorage.getItem('pt_oauth_client_id') || '';
+const sid  = sessionStorage.getItem('pt_sheet_id') || '';
+const goal = localStorage.getItem('pt_goal') || '10000';
+const cidEl  = document.getElementById('cfg-cid');
+const sidEl  = document.getElementById('cfg-sid');
   const goalEl = document.getElementById('cfg-goal');
   if (cidEl) cidEl.value = cid;
   if (sidEl) sidEl.value = sid;
@@ -1560,7 +1534,6 @@ function loadSettings() {
   const nc = document.getElementById('ss-no-cfg');
   if (nc) nc.style.display = (!cid || !sid) ? 'block' : 'none';
 }
-
 function saveSheetCfg(btn) {
   const cid = sanitize(document.getElementById('cfg-cid')?.value || '');
   const sid = sanitize(document.getElementById('cfg-sid')?.value || '');
@@ -1571,13 +1544,11 @@ function saveSheetCfg(btn) {
   tryInitGoogle();
   if (btn) { const o = btn.textContent; btn.textContent = '✓ saved'; setTimeout(() => btn.textContent = o, 1500); }
 }
-
 // ════════════════════════════════════════
 // GOALS ENGINE
 // ════════════════════════════════════════
 const PORTFOLIO_VAL = 1054.21;
 const PORTFOLIO_START = 1000; // approximate start of period baseline
-
 const PERIODS = {
   day:    { label: 'Daily Goal',   inputLabel: 'Set daily target ($)',   presets: [1060, 1075, 1100, 1150] },
   week:   { label: 'Weekly Goal',  inputLabel: 'Set weekly target ($)',  presets: [1100, 1150, 1200, 1300] },
@@ -1585,47 +1556,37 @@ const PERIODS = {
   year:   { label: 'Yearly Goal',  inputLabel: 'Set yearly target ($)',  presets: [2000, 5000, 10000, 25000] },
   custom: { label: 'Custom Goal',  inputLabel: 'Set custom target ($)',  presets: [] }
 };
-
 let activePeriod = 'day';
-
 function loadGoals() {
   const stored = JSON.parse(localStorage.getItem('pt_goals') || '{}');
   return stored;
 }
-
 function saveGoals(goals) {
   localStorage.setItem('pt_goals', JSON.stringify(goals));
 }
-
 function getGoal(period) {
   return loadGoals()[period] || null;
 }
-
 function selectPeriod(period, btn) {
   activePeriod = period;
   document.querySelectorAll('.gp-tab').forEach(t => t.classList.remove('active'));
   if (btn) btn.classList.add('active');
   renderGoalDetail(period);
 }
-
 function renderGoalDetail(period) {
   const cfg = PERIODS[period];
   const target = getGoal(period);
   const current = PORTFOLIO_VAL;
   const pct = target ? Math.min((current / target) * 100, 100) : 0;
-
   // Period label
   const pl = document.getElementById('period-label');
   if (pl) pl.textContent = cfg.label;
-
   // Input label
   const il = document.getElementById('goal-input-label');
   if (il) il.textContent = cfg.inputLabel;
-
   // Pre-fill input if goal set
   const gi = document.getElementById('goal-input');
   if (gi) gi.value = target || '';
-
   // Ring
   const ring = document.getElementById('goal-ring-fill');
   const ringPct = document.getElementById('ring-pct');
@@ -1636,18 +1597,14 @@ function renderGoalDetail(period) {
     ring.style.stroke = pct >= 100 ? 'var(--acc)' : pct >= 75 ? 'var(--acc)' : pct >= 50 ? 'var(--wrn)' : 'var(--muted)';
   }
   if (ringPct) ringPct.textContent = Math.round(pct) + '%';
-
   // Values
   const cv = document.getElementById('goal-current-val');
   if (cv) cv.textContent = '$' + current.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-
   const td = document.getElementById('goal-target-desc');
   if (td) td.textContent = target ? 'target: $' + parseFloat(target).toLocaleString() : 'target: not set — enter below';
-
   // Progress bar
   const mb = document.getElementById('goal-main-bar');
   if (mb) mb.style.width = pct + '%';
-
   const bl = document.getElementById('goal-bar-left');
   const br = document.getElementById('goal-bar-right');
   if (bl) bl.textContent = '$' + PORTFOLIO_START.toLocaleString() + ' start';
@@ -1659,7 +1616,6 @@ function renderGoalDetail(period) {
       br.textContent = 'set a target';
     }
   }
-
   // Status message
   const sm = document.getElementById('goal-status-msg');
   if (sm && target) {
@@ -1681,7 +1637,6 @@ function renderGoalDetail(period) {
   } else if (sm) {
     sm.style.display = 'none';
   }
-
   // Presets
   const presetsEl = document.getElementById('goal-presets');
   if (presetsEl) {
@@ -1689,126 +1644,117 @@ function renderGoalDetail(period) {
       `<button class="chip" style="padding:5px 9px;font-size:11px" onclick="document.getElementById('goal-input').value=${p};saveCurrentGoal()">${'$' + p.toLocaleString()}</button>`
     ).join('');
   }
-
   renderAllGoals();
   renderMilestones();
   updateOverviewStrip();
 }
-
 function saveCurrentGoal() {
   const val = parseFloat(document.getElementById('goal-input')?.value);
   if (!val || val <= 0) return;
   const goals = loadGoals();
   goals[activePeriod] = val;
   // Record today's portfolio value as the period start if not set
-  const startKey = 'pt_start_' + activePeriod;
-  if (!localStorage.getItem(startKey)) {
-    localStorage.setItem(startKey, PORTFOLIO_VAL);
-  }
-  saveGoals(goals);
-  renderGoalDetail(activePeriod);
-  updateStreak();
-  // visual feedback
-  const btn = event?.target;
-  if (btn) { const o = btn.textContent; btn.textContent = '✓'; setTimeout(() => btn.textContent = o, 1200); }
+const startKey = 'pt_start_' + activePeriod;
+if (!localStorage.getItem(startKey)) {
+localStorage.setItem(startKey, PORTFOLIO_VAL);
 }
-
+saveGoals(goals);
+renderGoalDetail(activePeriod);
+updateStreak();
+// visual feedback
+const btn = event?.target;
+if (btn) { const o = btn.textContent; btn.textContent = '✓'; setTimeout(() => btn.textContent = o, 1200); }
+}
 function renderAllGoals() {
-  const el = document.getElementById('all-goals-list');
-  if (!el) return;
-  const goals = loadGoals();
-  const rows = ['day','week','month','year','custom'].map(p => {
-    const target = goals[p];
-    if (!target) return `
-      <div class="ag-row">
-        <span class="ag-period">${p.charAt(0).toUpperCase()+p.slice(1)}</span>
-        <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">not set</span>
-        <button class="chip" style="padding:4px 9px;font-size:10px;margin-left:auto" onclick="selectPeriod('${p}',document.querySelector('[data-period=${p}]'))">set ↗</button>
-      </div>`;
-    const pct = Math.min((PORTFOLIO_VAL / target) * 100, 100);
-    const color = pct >= 100 ? 'var(--acc)' : pct >= 50 ? 'var(--wrn)' : 'var(--muted)';
-    return `
-      <div class="ag-row">
-        <span class="ag-period">${p.charAt(0).toUpperCase()+p.slice(1)}</span>
-        <span class="ag-target">$${parseFloat(target).toLocaleString()}</span>
-        <div class="ag-prog"><div class="gbar" style="margin:0"><div class="gfill" style="width:${pct.toFixed(1)}%;background:${color}"></div></div></div>
-        <span class="ag-stat" style="color:${color}">${Math.round(pct)}%</span>
-      </div>`;
-  });
-  el.innerHTML = rows.join('');
+const el = document.getElementById('all-goals-list');
+if (!el) return;
+const goals = loadGoals();
+const rows = ['day','week','month','year','custom'].map(p => {
+const target = goals[p];
+if (!target) return `
+<div class="ag-row">
+<span class="ag-period">${p.charAt(0).toUpperCase()+p.slice(1)}</span>
+<span style="font-size:12px;color:var(--muted);font-family:var(--mono)">not set</span>
+<button class="chip" style="padding:4px 9px;font-size:10px;margin-left:auto" onclick="selectPeriod('${p}',document.querySelector('[data-period=${p}]'))">set ↗</button>
+</div>`;
+const pct = Math.min((PORTFOLIO_VAL / target) * 100, 100);
+const color = pct >= 100 ? 'var(--acc)' : pct >= 50 ? 'var(--wrn)' : 'var(--muted)';
+return `
+<div class="ag-row">
+<span class="ag-period">${p.charAt(0).toUpperCase()+p.slice(1)}</span>
+<span class="ag-target">$${parseFloat(target).toLocaleString()}</span>
+<div class="ag-prog"><div class="gbar" style="margin:0"><div class="gfill" style="width:${pct.toFixed(1)}%;background:${color}"></div></div></div>
+<span class="ag-stat" style="color:${color}">${Math.round(pct)}%</span>
+</div>`;
+});
+el.innerHTML = rows.join('');
 }
-
 function renderMilestones() {
-  const el = document.getElementById('milestones-list');
-  if (!el) return;
-  const milestones = [
-    { val: 1000,  icon: '🚀', title: 'Launch',      desc: 'Portfolio reached $1,000' },
-    { val: 1500,  icon: '📈', title: 'Growth',       desc: 'Portfolio reached $1,500' },
-    { val: 2000,  icon: '💰', title: 'Two Grand',    desc: 'Portfolio reached $2,000' },
-    { val: 5000,  icon: '⭐', title: 'Five Star',    desc: 'Portfolio reached $5,000' },
-    { val: 10000, icon: '🏆', title: 'Five Figures', desc: 'Portfolio reached $10,000' },
-    { val: 25000, icon: '💎', title: 'Diamond',      desc: 'Portfolio reached $25,000' },
-    { val: 50000, icon: '🌙', title: 'Moon',         desc: 'Portfolio reached $50,000' },
-    { val: 100000,icon: '🦁', title: 'Lion',         desc: 'Portfolio reached $100,000' },
-  ];
-  el.innerHTML = milestones.map(m => {
-    const hit = PORTFOLIO_VAL >= m.val;
-    return `<div class="ms ${hit ? 'hit' : 'locked'}" style="width:calc(50% - 4px)">
-      <div class="ms-icon">${m.icon}</div>
-      <div class="ms-body">
-        <div class="ms-title" style="color:${hit ? 'var(--acc)' : 'var(--muted)'}">${m.title}</div>
-        <div class="ms-desc">${m.desc}</div>
-      </div>
-      <span class="ms-badge ${hit ? 'tg-g' : ''}" style="${hit ? 'background:var(--acc-d);color:var(--acc);border:1px solid var(--acc-b)' : 'background:var(--surf2);color:var(--muted);border:1px solid var(--bdr)'}">${hit ? '✓' : '$'+m.val.toLocaleString()}</span>
-    </div>`;
-  }).join('');
+const el = document.getElementById('milestones-list');
+if (!el) return;
+const milestones = [
+{ val: 1000,  icon: '🚀', title: 'Launch',      desc: 'Portfolio reached $1,000' },
+{ val: 1500,  icon: '📈', title: 'Growth',       desc: 'Portfolio reached $1,500' },
+{ val: 2000,  icon: '💰', title: 'Two Grand',    desc: 'Portfolio reached $2,000' },
+{ val: 5000,  icon: '⭐', title: 'Five Star',    desc: 'Portfolio reached $5,000' },
+{ val: 10000, icon: '🏆', title: 'Five Figures', desc: 'Portfolio reached $10,000' },
+{ val: 25000, icon: '💎', title: 'Diamond',      desc: 'Portfolio reached $25,000' },
+{ val: 50000, icon: '🌙', title: 'Moon',         desc: 'Portfolio reached $50,000' },
+{ val: 100000,icon: '🦁', title: 'Lion',         desc: 'Portfolio reached $100,000' },
+];
+el.innerHTML = milestones.map(m => {
+const hit = PORTFOLIO_VAL >= m.val;
+return `<div class="ms ${hit ? 'hit' : 'locked'}" style="width:calc(50% - 4px)">
+<div class="ms-icon">${m.icon}</div>
+<div class="ms-body">
+<div class="ms-title" style="color:${hit ? 'var(--acc)' : 'var(--muted)'}">${m.title}</div>
+<div class="ms-desc">${m.desc}</div>
+</div>
+<span class="ms-badge ${hit ? 'tg-g' : ''}" style="${hit ? 'background:var(--acc-d);color:var(--acc);border:1px solid var(--acc-b)' : 'background:var(--surf2);color:var(--muted);border:1px solid var(--bdr)'}">${hit ? '✓' : '$'+m.val.toLocaleString()}</span>
+</div>`;
+}).join('');
 }
-
 function updateStreak() {
-  // Simple streak: check if goal was hit today vs yesterday
-  const streak = parseInt(localStorage.getItem('pt_streak') || '0');
-  const sc = document.getElementById('streak-count');
-  const se = document.getElementById('streak-emoji');
-  if (sc) sc.textContent = streak;
-  if (se) se.textContent = streak >= 7 ? '🔥' : streak >= 3 ? '⚡' : streak >= 1 ? '✨' : '💤';
-  const gh = document.getElementById('goals-hit');
-  if (gh) gh.textContent = localStorage.getItem('pt_goals_hit_month') || '0';
-  const bd = document.getElementById('best-day');
-  const bdd = document.getElementById('best-day-date');
-  const bestDay = localStorage.getItem('pt_best_day');
-  if (bd) bd.textContent = bestDay ? '$' + parseFloat(bestDay).toLocaleString() : '—';
-  if (bdd) bdd.textContent = localStorage.getItem('pt_best_day_date') || 'no data yet';
+// Simple streak: check if goal was hit today vs yesterday
+const streak = parseInt(localStorage.getItem('pt_streak') || '0');
+const sc = document.getElementById('streak-count');
+const se = document.getElementById('streak-emoji');
+if (sc) sc.textContent = streak;
+if (se) se.textContent = streak >= 7 ? '🔥' : streak >= 3 ? '⚡' : streak >= 1 ? '✨' : '💤';
+const gh = document.getElementById('goals-hit');
+if (gh) gh.textContent = localStorage.getItem('pt_goals_hit_month') || '0';
+const bd = document.getElementById('best-day');
+const bdd = document.getElementById('best-day-date');
+const bestDay = localStorage.getItem('pt_best_day');
+if (bd) bd.textContent = bestDay ? '$' + parseFloat(bestDay).toLocaleString() : '—';
+if (bdd) bdd.textContent = localStorage.getItem('pt_best_day_date') || 'no data yet';
 }
-
 function updateOverviewStrip() {
-  const goals = loadGoals();
-  const periods = ['day','week','month','year'];
-  periods.forEach(p => {
-    const target = goals[p];
-    const pct = target ? Math.min((PORTFOLIO_VAL / target) * 100, 100) : 0;
-    const pctEl = document.getElementById('gs-' + p + '-pct');
-    const barEl = document.getElementById('gs-' + p + '-bar');
-    const lblEl = document.getElementById('gs-' + p + '-lbl');
-    if (pctEl) pctEl.textContent = target ? Math.round(pct) + '%' : '—';
-    if (barEl) {
-      barEl.style.width = pct + '%';
-      barEl.style.background = pct >= 100 ? 'var(--acc)' : pct >= 75 ? 'var(--acc)' : pct >= 50 ? 'var(--wrn)' : 'var(--muted)';
-    }
-    if (lblEl) lblEl.textContent = target ? '$' + parseFloat(target).toLocaleString() + ' target' : 'tap to set goal';
-  });
+const goals = loadGoals();
+const periods = ['day','week','month','year'];
+periods.forEach(p => {
+const target = goals[p];
+const pct = target ? Math.min((PORTFOLIO_VAL / target) * 100, 100) : 0;
+const pctEl = document.getElementById('gs-' + p + '-pct');
+const barEl = document.getElementById('gs-' + p + '-bar');
+const lblEl = document.getElementById('gs-' + p + '-lbl');
+if (pctEl) pctEl.textContent = target ? Math.round(pct) + '%' : '—';
+if (barEl) {
+barEl.style.width = pct + '%';
+barEl.style.background = pct >= 100 ? 'var(--acc)' : pct >= 75 ? 'var(--acc)' : pct >= 50 ? 'var(--wrn)' : 'var(--muted)';
 }
-
+if (lblEl) lblEl.textContent = target ? '$' + parseFloat(target).toLocaleString() + ' target' : 'tap to set goal';
+});
+}
 function saveGoal(btn) {
-  // Legacy shim — redirect to goals tab
-  switchTab('goals', document.querySelector('[onclick*="goals"]'));
+// Legacy shim — redirect to goals tab
+switchTab('goals', document.querySelector('[onclick*="goals"]'));
 }
-
 function updateGoalBar() {
   updateOverviewStrip();
   renderGoalDetail(activePeriod);
   updateStreak();
 }
-
 // ════════════════════════════════════════
 // CONFIG TOKEN — export / import
 // Token format: base64(JSON({v,hash,salt,cid,sid,goal}))
@@ -1837,7 +1783,6 @@ function exportConfig(btn) {
   if (val) val.value = token;
   if (btn) btn.textContent = 'regenerate token';
 }
-
 function copyToken() {
   const val = document.getElementById('token-val');
   const ok = document.getElementById('copy-ok');
@@ -1850,7 +1795,6 @@ function copyToken() {
     if (ok) ok.textContent = 'select all + copy manually (Ctrl+A, Ctrl+C)';
   });
 }
-
 async function importConfig() {
   const raw = document.getElementById('s-token')?.value.trim();
   const err = document.getElementById('s-token-err');
@@ -1867,106 +1811,103 @@ async function importConfig() {
     return;
   }
   // Apply config to this device's storage
-  localStorage.setItem('pt_pw_hash', payload.hash);
-  localStorage.setItem('pt_salt', payload.salt);
-  if (payload.cid) localStorage.setItem('pt_oauth_client_id', payload.cid);
-  if (payload.sid) sessionStorage.setItem('pt_sheet_id', payload.sid);
-  if (payload.goal) localStorage.setItem('pt_goal', payload.goal);
-  if (payload.goals) localStorage.setItem('pt_goals', payload.goals);
-  // Done — go straight to lock screen (user enters their password)
-  if (err) err.textContent = '';
-  showScreen('screen-lock');
-  updatePips();
-  setTimeout(() => {
-    document.getElementById('l-pw')?.focus();
-  }, 150);
+localStorage.setItem('pt_pw_hash', payload.hash);
+localStorage.setItem('pt_salt', payload.salt);
+if (payload.cid) localStorage.setItem('pt_oauth_client_id', payload.cid);
+if (payload.sid) sessionStorage.setItem('pt_sheet_id', payload.sid);
+if (payload.goal) localStorage.setItem('pt_goal', payload.goal);
+if (payload.goals) localStorage.setItem('pt_goals', payload.goals);
+// Done — go straight to lock screen (user enters their password)
+if (err) err.textContent = '';
+showScreen('screen-lock');
+updatePips();
+setTimeout(() => {
+document.getElementById('l-pw')?.focus();
+}, 150);
 }
-
 function goStep1() {
-  document.getElementById('step0').style.display = 'none';
-  document.getElementById('step1').style.display = 'block';
-  document.getElementById('si0').classList.remove('active');
-  document.getElementById('si1').classList.add('active');
+document.getElementById('step0').style.display = 'none';
+document.getElementById('step1').style.display = 'block';
+document.getElementById('si0').classList.remove('active');
+document.getElementById('si1').classList.add('active');
 }
-
 
 // ════════════════════════════════════════
 // VERSION CONTROL
 // ════════════════════════════════════════
 const APP_VERSION = {
-  number: 'v2.1.0',
-  date: '2026-06-19',
-  label: 'Full Changelog + Version Tracking',
-  changes: [
-    'Full AI Portfolio Manager with Market Regime, Macro, Geo Engines',
-    'Opportunity Scoring Model — 75+ threshold required',
-    'Buffett Quality Score on all recommendations',
-    '14-day repeat penalty (-15) without material catalyst',
-    'Removed leveraged ETFs (rule violation)',
-    'Max 2 equity + 1 crypto positions enforced',
-    'Min 15% cash reserve enforced in code',
-    'Safety override — do nothing if confidence < 60%',
-    'Investor Consensus Panel (Buffett, Lynch, Dalio, Wood, Jones)',
-    'Full trade details: entry zone, target, stop, R:R, hold period',
-    'Version displayed on all key screens',
-  ]
+number: 'v2.1.0',
+date: '2026-06-19',
+label: 'Full Changelog + Version Tracking',
+changes: [
+'Full AI Portfolio Manager with Market Regime, Macro, Geo Engines',
+'Opportunity Scoring Model — 75+ threshold required',
+'Buffett Quality Score on all recommendations',
+'14-day repeat penalty (-15) without material catalyst',
+'Removed leveraged ETFs (rule violation)',
+'Max 2 equity + 1 crypto positions enforced',
+'Min 15% cash reserve enforced in code',
+'Safety override — do nothing if confidence < 60%',
+'Investor Consensus Panel (Buffett, Lynch, Dalio, Wood, Jones)',
+'Full trade details: entry zone, target, stop, R:R, hold period',
+'Version displayed on all key screens',
+]
 };
-
 // ── FULL CHANGELOG ────────────────────────────────────────────
 const CHANGELOG = [
-  { version:"v2.1.0", date:"2026-06-19", type:"minor", label:"Full Changelog + Version Tracking",
-    changes:[
-      "Full changelog visible in Settings",
-      "What's New modal on first login after each update",
-      "Version badge clickable — opens full changelog",
-      "localStorage tracks last-seen version",
-      "All prior releases documented with complete change notes"
-    ]},
-  { version:"v2.0.0", date:"2026-06-19", type:"major", label:"AI Portfolio Manager Integration",
-    changes:[
-      "Full AI Portfolio Manager system prompt integrated",
-      "Market Regime + Macro Economic + Geopolitical Engines",
-      "Opportunity Scoring Model — 75+ threshold required",
-      "Buffett Quality Score on all recommendations",
-      "14-day repeat penalty without catalyst",
-      "Safety override when confidence below 60%",
-      "SIM mode: paper trades with realistic price simulation",
-      "LIVE mode: fully autonomous execution",
-      "Strategy alerts: proactive shift recommendations",
-      "Autonomous 5-min monitor fires to Claude for execution",
-      "Removed leveraged ETFs — rule violation",
-      "Max 2 equity + 1 crypto positions enforced",
-      "Min 15% cash reserve always maintained"
-    ]},
-  { version:"v1.5.0", date:"2026-06-19", type:"minor", label:"Position Mode Controls + Dump Button",
-    changes:[
-      "Position mode: 1 per ticker / 1 total / 2 max / confirm each",
-      "Dump All button with confirmation modal",
-      "botCanBuy() enforces limits on every tick",
-      "SPEND EXACTLY / SELL EXACTLY labels on all order prompts",
-      "SPCX account 6689 explicitly protected in all prompts"
-    ]},
-  { version:"v1.4.0", date:"2026-06-19", type:"minor", label:"Live Mode Switch + Safety Gate",
-    changes:[
-      "SIM / LIVE toggle in Trading Bot tab",
-      "Requires typing LIVE to confirm activation",
-      "Red pulsing banner when live trading active",
-      "Bot auto-resets to SIM after every session",
-      "Cannot switch modes mid-session"
-    ]},
-  { version:"v1.3.0", date:"2026-06-19", type:"minor", label:"Trading Bot + Timed Sessions",
-    changes:[
-      "Trading Bot tab with multi-stock session support",
-      "Timed sessions with tax-adjusted profit goal calculator",
-      "PDT rule eliminated June 4 2026",
-      "Live ticker cards with mini price charts",
-      "4-slot position system with configurable budget"
-    ]},
-  { version:"v1.2.0", date:"2026-06-19", type:"minor", label:"Goals Tab + Multi-Period Tracking",
-    changes:[
-      "Goals tab: Daily, Weekly, Monthly, Yearly, Custom",
-      "SVG progress rings, streak tracker, 8 portfolio milestones",
-      "AI Goal Coach chips",
+{ version:"v2.1.0", date:"2026-06-19", type:"minor", label:"Full Changelog + Version Tracking",
+changes:[
+"Full changelog visible in Settings",
+"What's New modal on first login after each update",
+"Version badge clickable — opens full changelog",
+"localStorage tracks last-seen version",
+"All prior releases documented with complete change notes"
+]},
+{ version:"v2.0.0", date:"2026-06-19", type:"major", label:"AI Portfolio Manager Integration",
+changes:[
+"Full AI Portfolio Manager system prompt integrated",
+"Market Regime + Macro Economic + Geopolitical Engines",
+"Opportunity Scoring Model — 75+ threshold required",
+"Buffett Quality Score on all recommendations",
+"14-day repeat penalty without catalyst",
+"Safety override when confidence below 60%",
+"SIM mode: paper trades with realistic price simulation",
+"LIVE mode: fully autonomous execution",
+"Strategy alerts: proactive shift recommendations",
+"Autonomous 5-min monitor fires to Claude for execution",
+"Removed leveraged ETFs — rule violation",
+"Max 2 equity + 1 crypto positions enforced",
+"Min 15% cash reserve always maintained"
+]},
+{ version:"v1.5.0", date:"2026-06-19", type:"minor", label:"Position Mode Controls + Dump Button",
+changes:[
+"Position mode: 1 per ticker / 1 total / 2 max / confirm each",
+"Dump All button with confirmation modal",
+"botCanBuy() enforces limits on every tick",
+"SPEND EXACTLY / SELL EXACTLY labels on all order prompts",
+"SPCX account 6689 explicitly protected in all prompts"
+]},
+{ version:"v1.4.0", date:"2026-06-19", type:"minor", label:"Live Mode Switch + Safety Gate",
+changes:[
+"SIM / LIVE toggle in Trading Bot tab",
+"Requires typing LIVE to confirm activation",
+"Red pulsing banner when live trading active",
+"Bot auto-resets to SIM after every session",
+"Cannot switch modes mid-session"
+]},
+{ version:"v1.3.0", date:"2026-06-19", type:"minor", label:"Trading Bot + Timed Sessions",
+changes:[
+"Trading Bot tab with multi-stock session support",
+"Timed sessions with tax-adjusted profit goal calculator",
+"PDT rule eliminated June 4 2026",
+"Live ticker cards with mini price charts",
+"4-slot position system with configurable budget"
+]},
+{ version:"v1.2.0", date:"2026-06-19", type:"minor", label:"Goals Tab + Multi-Period Tracking",
+changes:[
+"Goals tab: Daily, Weekly, Monthly, Yearly, Custom",
+"SVG progress rings, streak tracker, 8 portfolio milestones",
+"AI Goal Coach chips",
       "Overview strip: 4-card goal summary"
     ]},
   { version:"v1.1.0", date:"2026-06-19", type:"minor", label:"Portable Config Token",
@@ -1986,7 +1927,6 @@ const CHANGELOG = [
       "Google Apps Script for automated sheet setup"
     ]}
 ]
-
 function displayVersion() {
   document.querySelectorAll('.app-version').forEach(el => {
     el.textContent = APP_VERSION.number;
@@ -1998,18 +1938,15 @@ function displayVersion() {
   const labelEl = document.querySelector('.app-version-label');
   if (labelEl) labelEl.textContent = APP_VERSION.label;
 }
-
 function checkVersionUpdate() {
   const lastSeen = localStorage.getItem('pm_last_version');
   if (lastSeen !== APP_VERSION.number) {
     setTimeout(showWhatsNew, 900);
   }
 }
-
 function markVersionSeen() {
   localStorage.setItem('pm_last_version', APP_VERSION.number);
 }
-
 function showWhatsNew() {
   const v = CHANGELOG[0];
   const modal = document.getElementById('version-modal');
@@ -2017,7 +1954,7 @@ function showWhatsNew() {
   if (!modal || !el) return;
   const tc = v.type === 'major' ? 'var(--acc)' : 'var(--wrn)';
   el.innerHTML =
-    '<div style="text-align:center;margin-bottom:16px"><div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:6px">WHAT'S NEW</div>' +
+    '<div style="text-align:center;margin-bottom:16px"><div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:6px">WHAT&#39;S NEW</div>' +
     '<div style="font-family:var(--mono);font-size:26px;font-weight:600;color:var(--acc)">' + v.version + '</div>' +
     '<div style="font-size:14px;font-weight:500;color:var(--txt);margin-top:4px">' + v.label + '</div>' +
     '<div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:2px">' + v.date + ' · ' + v.type + ' release</div></div>' +
@@ -2030,7 +1967,6 @@ function showWhatsNew() {
   modal.style.display = 'flex';
   markVersionSeen();
 }
-
 function showChangelog() {
   const modal = document.getElementById('version-modal');
   const el    = document.getElementById('version-modal-content');
@@ -2052,12 +1988,10 @@ function showChangelog() {
   modal.style.display = 'flex';
   markVersionSeen();
 }
-
 function closeVersionModal() {
   const m = document.getElementById('version-modal');
   if (m) m.style.display = 'none';
 }
-
 // ════════════════════════════════════════
 // RISK RULES — never violated
 // ════════════════════════════════════════
@@ -2074,7 +2008,6 @@ const RISK = {
   minConfidence: 60,
   maxUncertainty:0.40,
 };
-
 // ════════════════════════════════════════
 // PORTFOLIO STATE
 // ════════════════════════════════════════
@@ -2092,7 +2025,6 @@ let pmState = {
   confidence:   null,
   safetyOverride: false,
 };
-
 function pmLoadState() {
   const saved = localStorage.getItem('pm_state');
   if (saved) {
@@ -2103,14 +2035,12 @@ function pmLoadState() {
   }
   pmState.recHistory = JSON.parse(localStorage.getItem('pm_rec_history') || '{}');
 }
-
 function pmSaveState() {
   localStorage.setItem('pm_state', JSON.stringify({
     cash: pmState.cash, positions: pmState.positions, capital: pmState.capital
   }));
   localStorage.setItem('pm_rec_history', JSON.stringify(pmState.recHistory));
 }
-
 // ════════════════════════════════════════
 // 14-DAY REPEAT PENALTY
 // ════════════════════════════════════════
@@ -2121,12 +2051,10 @@ function getRepeatPenalty(ticker, hasCatalyst) {
   if (days <= 14 && !hasCatalyst) return -15;
   return 0;
 }
-
 function recordRecommendation(ticker, score, catalyst) {
   pmState.recHistory[ticker] = { date: new Date().toISOString(), score, catalyst: catalyst || null };
   pmSaveState();
 }
-
 function getHistoryStr() {
   const entries = Object.entries(pmState.recHistory);
   if (!entries.length) return 'None';
@@ -2134,16 +2062,13 @@ function getHistoryStr() {
     const days = Math.floor((Date.now() - new Date(r.date).getTime()) / 86400000);
     const penalty = days <= 14 && !r.catalyst ? ' → -15 PENALTY' : '';
     return t + ': recommended ' + days + 'd ago' + (r.catalyst ? ' (catalyst: ' + r.catalyst + ')' : '') + penalty;
-  }).join('
-');
+  }).join('\n');
 }
-
 // ════════════════════════════════════════
 // ANALYSIS PROMPT BUILDER
 // ════════════════════════════════════════
 const SYSTEM_PROMPT = `You are an autonomous AI Portfolio Manager operating under strict risk controls.
 Objective: maximize risk-adjusted returns while preserving capital.
-
 RISK RULES (ABSOLUTE — never violate):
 • Max 2 equity positions, max 1 crypto position
 • Max 20% of portfolio per position
@@ -2155,35 +2080,26 @@ RISK RULES (ABSOLUTE — never violate):
 • Min $2B market cap
 • Min 1M daily volume shares
 • All orders must be reviewed before execution
-
 OPPORTUNITY SCORING MODEL (only recommend 75+):
 • Technical Score: 30% (MA, RSI, MACD, volume, support/resistance)
 • Fundamental Score: 30% (revenue growth, margins, cash flow, ROE, valuation)
 • Macro Score: 20% (Fed policy, rates, DXY, inflation)
 • Sentiment Score: 10% (news, institutional flows, analyst revisions)
 • Risk Score: 10% (volatility, correlation, sector risk)
-
 14-DAY REPEAT PENALTY: -15 points if recommended within last 14 days without material catalyst
-
 SAFETY OVERRIDE: If confidence < 60% or uncertainty > 40%, recommend NOTHING — cash is a position.
-
 BUFFETT QUALITY CRITERIA: Strong balance sheet, predictable earnings, positive cash flow, reasonable valuation, durable moat, long-term growth.
-
 INVESTOR CONSENSUS: Simulate Buffett, Lynch, Dalio, Wood, Jones perspectives.`;
-
 function buildAnalysisPrompt() {
   const reserve = (pmState.capital * RISK.minCashPct).toFixed(2);
   const deployable = Math.max(0, pmState.cash - parseFloat(reserve)).toFixed(2);
   const equitySlots = RISK.maxEquity - pmState.positions.filter(p=>p.type!=='crypto').length;
   const cryptoSlots = RISK.maxCrypto - pmState.positions.filter(p=>p.type==='crypto').length;
   const maxPosition = (pmState.capital * RISK.maxPosPct).toFixed(2);
-
   const posStr = pmState.positions.length
     ? pmState.positions.map(p=>'• '+p.ticker+' ('+p.type+'): '+p.shares+' shares @ $'+p.entryPrice+' | Target: $'+p.target+' | Stop: $'+p.stop_loss).join('\n')
     : '• None — fully in cash';
-
   return SYSTEM_PROMPT + `
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CURRENT PORTFOLIO STATE:
 • Starting Capital: $${pmState.capital}
@@ -2193,13 +2109,10 @@ CURRENT PORTFOLIO STATE:
 • Max Per Position: $${maxPosition} (20%)
 • Equity Slots: ${equitySlots} remaining
 • Crypto Slots: ${cryptoSlots} remaining
-
 CURRENT POSITIONS:
 ${posStr}
-
 14-DAY RECOMMENDATION HISTORY:
 ${getHistoryStr()}
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 REQUIRED — use web search for current data:
 1. Classify current market regime (Bull/Bear/Sideways/High Vol/Low Vol)
@@ -2210,7 +2123,6 @@ REQUIRED — use web search for current data:
 6. Only include opportunities scoring 75+ after penalties
 7. Apply Safety Override if confidence < 60%
 8. Investor consensus for each recommendation
-
 RESPOND ONLY WITH THIS JSON (no other text, no markdown fences):
 {
   "version": "v2.1.0",
@@ -2258,134 +2170,114 @@ RESPOND ONLY WITH THIS JSON (no other text, no markdown fences):
   "recommended_cash_pct": 15
 }`;
 }
-
 // ════════════════════════════════════════
 // ANALYSIS — send to Claude
 // ════════════════════════════════════════
 function pmAnalyze() {
   const btn = document.getElementById('pm-analyze-btn');
   if (btn) { btn.textContent = '⏳ analyzing...'; btn.disabled = true; }
-
   const prompt =
-    'AI PORTFOLIO MANAGER — FULL ANALYSIS REQUEST\n\n' + buildAnalysisPrompt() +
-    '\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' +
+    'AI PORTFOLIO MANAGER — FULL ANALYSIS REQUEST\n' + buildAnalysisPrompt() +
+    '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' +
     '\nPlease perform the full analysis and return ONLY the JSON. ' +
     'I will paste it into the Portfolio Manager dashboard to render the recommendations.';
-
   sendPrompt(prompt);
-
   const statusEl = document.getElementById('pm-import-status');
   if (statusEl) statusEl.textContent = 'Analysis sent to Claude — paste JSON response below when ready';
-
   setTimeout(() => {
     if (btn) { btn.textContent = '▶ Run Analysis'; btn.disabled = false; }
   }, 3000);
-
   pmAddLog('ANALYZE', 'REQUEST', 'Full portfolio analysis requested from Claude');
 }
-
 // ════════════════════════════════════════
-// IMPORT & PARSE CLAUDE'S JSON RESPONSE
+// IMPORT AND PARSE CLAUDE JSON RESPONSE
 // ════════════════════════════════════════
 function pmImportAnalysis() {
-  const raw = document.getElementById('pm-json-input')?.value || '';
-  const statusEl = document.getElementById('pm-import-status');
-
-  // Extract JSON from whatever Claude returned (even with surrounding text)
-  const start = raw.indexOf('{');
-  const end = raw.lastIndexOf('}') + 1;
-  if (start < 0 || end <= start) {
-    if (statusEl) { statusEl.textContent = '✗ no JSON found — paste Claude's response'; statusEl.style.color = 'var(--dng)'; }
-    return;
-  }
-
-  let analysis;
-  try {
-    analysis = JSON.parse(raw.slice(start, end));
-  } catch(e) {
-    if (statusEl) { statusEl.textContent = '✗ invalid JSON: ' + e.message; statusEl.style.color = 'var(--dng)'; }
-    return;
-  }
-
-  // Store and render
-  pmState.lastAnalysis = analysis;
-  pmState.regime    = analysis.regime    || '—';
-  pmState.macro     = analysis.macro     || '—';
-  pmState.geoScore  = analysis.geo_score;
-  pmState.confidence = analysis.overall_confidence;
-  pmState.safetyOverride = analysis.safety_override || false;
-  pmState.watchlist = analysis.watchlist || { stocks:[], etfs:[], crypto:[] };
-  pmState.recommendations = (analysis.recommendations || [])
-    .filter(r => (r.opportunity_score + (r.repeat_penalty||0)) >= RISK.minScore);
-
-  // Record recommendations in 14-day history
-  pmState.recommendations.forEach(r => {
-    const hasCatalyst = r.catalysts && r.catalysts.length > 0;
-    recordRecommendation(r.ticker, r.opportunity_score, hasCatalyst ? r.catalysts[0] : null);
-  });
-
-  pmRenderIntelligence();
-  pmRenderRecommendations();
-  pmRenderWatchlist();
-  pmRenderRiskWarnings(analysis.risk_warnings || []);
-  pmUpdatePortfolioUI();
-
-  // Safety override display
-  const safetyBanner = document.getElementById('pm-safety-banner');
-  const safetyReason = document.getElementById('pm-safety-reason');
-  if (pmState.safetyOverride) {
-    if (safetyBanner) safetyBanner.style.display = 'block';
-    if (safetyReason) safetyReason.textContent = analysis.override_reason || '';
-  } else {
-    if (safetyBanner) safetyBanner.style.display = 'none';
-  }
-
-  if (statusEl) {
-    statusEl.textContent = '✓ imported — ' + pmState.recommendations.length + ' recommendation(s) scored 75+';
-    statusEl.style.color = 'var(--acc)';
-  }
-
-  pmAddLog('IMPORT', 'ANALYSIS', 'Regime: ' + pmState.regime + ' | Macro: ' + pmState.macro + ' | Conf: ' + pmState.confidence + '%');
+const raw = document.getElementById('pm-json-input')?.value || '';
+const statusEl = document.getElementById('pm-import-status');
+// Extract JSON from whatever Claude returned (even with surrounding text)
+const start = raw.indexOf('{');
+const end = raw.lastIndexOf('}') + 1;
+if (start < 0 || end <= start) {
+if (statusEl) { statusEl.textContent = '✗ no JSON found — paste Claude&#39;s response'; statusEl.style.color = 'var(--dng)'; }
+return;
 }
-
+let analysis;
+try {
+analysis = JSON.parse(raw.slice(start, end));
+} catch(e) {
+if (statusEl) { statusEl.textContent = '✗ invalid JSON: ' + e.message; statusEl.style.color = 'var(--dng)'; }
+return;
+}
+// Store and render
+pmState.lastAnalysis = analysis;
+pmState.regime    = analysis.regime    || '—';
+pmState.macro     = analysis.macro     || '—';
+pmState.geoScore  = analysis.geo_score;
+pmState.confidence = analysis.overall_confidence;
+pmState.safetyOverride = analysis.safety_override || false;
+pmState.watchlist = analysis.watchlist || { stocks:[], etfs:[], crypto:[] };
+pmState.recommendations = (analysis.recommendations || [])
+.filter(r => (r.opportunity_score + (r.repeat_penalty||0)) >= RISK.minScore);
+// Record recommendations in 14-day history
+pmState.recommendations.forEach(r => {
+const hasCatalyst = r.catalysts && r.catalysts.length > 0;
+recordRecommendation(r.ticker, r.opportunity_score, hasCatalyst ? r.catalysts[0] : null);
+});
+pmRenderIntelligence();
+pmRenderRecommendations();
+pmRenderWatchlist();
+pmRenderRiskWarnings(analysis.risk_warnings || []);
+pmUpdatePortfolioUI();
+// Safety override display
+const safetyBanner = document.getElementById('pm-safety-banner');
+const safetyReason = document.getElementById('pm-safety-reason');
+if (pmState.safetyOverride) {
+if (safetyBanner) safetyBanner.style.display = 'block';
+if (safetyReason) safetyReason.textContent = analysis.override_reason || '';
+} else {
+if (safetyBanner) safetyBanner.style.display = 'none';
+}
+if (statusEl) {
+statusEl.textContent = '✓ imported — ' + pmState.recommendations.length + ' recommendation(s) scored 75+';
+statusEl.style.color = 'var(--acc)';
+}
+pmAddLog('IMPORT', 'ANALYSIS', 'Regime: ' + pmState.regime + ' | Macro: ' + pmState.macro + ' | Conf: ' + pmState.confidence + '%');
+}
 // ════════════════════════════════════════
 // RENDER FUNCTIONS
 // ════════════════════════════════════════
 function pmRenderIntelligence() {
-  const geoColor = pmState.geoScore >= 3 ? 'var(--acc)' : pmState.geoScore <= -3 ? 'var(--dng)' : 'var(--wrn)';
-  const macroColor = pmState.macro === 'Bullish' ? 'var(--acc)' : pmState.macro === 'Bearish' ? 'var(--dng)' : 'var(--wrn)';
-  const confColor = pmState.confidence >= 75 ? 'var(--acc)' : pmState.confidence >= 60 ? 'var(--wrn)' : 'var(--dng)';
-  const set = (id, v, c) => { const e = document.getElementById(id); if(e){e.textContent=v;if(c)e.style.color=c;} };
-  set('pm-regime', pmState.regime || '—');
-  set('pm-macro', pmState.macro || '—', macroColor);
-  set('pm-geo', pmState.geoScore !== null ? (pmState.geoScore >= 0 ? '+' : '') + pmState.geoScore : '—', geoColor);
-  set('pm-confidence', pmState.confidence !== null ? pmState.confidence + '%' : '—', confColor);
+const geoColor = pmState.geoScore >= 3 ? 'var(--acc)' : pmState.geoScore <= -3 ? 'var(--dng)' : 'var(--wrn)';
+const macroColor = pmState.macro === 'Bullish' ? 'var(--acc)' : pmState.macro === 'Bearish' ? 'var(--dng)' : 'var(--wrn)';
+const confColor = pmState.confidence >= 75 ? 'var(--acc)' : pmState.confidence >= 60 ? 'var(--wrn)' : 'var(--dng)';
+const set = (id, v, c) => { const e = document.getElementById(id); if(e){e.textContent=v;if(c)e.style.color=c;} };
+set('pm-regime', pmState.regime || '—');
+set('pm-macro', pmState.macro || '—', macroColor);
+set('pm-geo', pmState.geoScore !== null ? (pmState.geoScore >= 0 ? '+' : '') + pmState.geoScore : '—', geoColor);
+set('pm-confidence', pmState.confidence !== null ? pmState.confidence + '%' : '—', confColor);
 }
-
 function pmRenderRecommendations() {
-  const el = document.getElementById('pm-recommendations');
-  if (!el) return;
-
-  if (!pmState.recommendations.length) {
-    el.innerHTML = pmState.safetyOverride
-      ? '<div style="padding:16px;text-align:center;color:var(--wrn);font-family:var(--mono);font-size:12px">Safety override active — holding cash</div>'
-      : '<div style="padding:16px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:12px">no opportunities scoring 75+ at this time</div>';
-    return;
-  }
-
-  el.innerHTML = pmState.recommendations.map(r => {
-    const finalScore = r.opportunity_score + (r.repeat_penalty || 0);
-    const scoreColor = finalScore >= 85 ? 'var(--acc)' : finalScore >= 75 ? 'var(--wrn)' : 'var(--dng)';
-    const confColor  = r.confidence >= 80 ? 'var(--acc)' : r.confidence >= 65 ? 'var(--wrn)' : 'var(--dng)';
-    const penaltyStr = r.repeat_penalty ? '<span style="color:var(--dng);font-size:10px"> (-15 repeat)</span>' : '';
-    const deployed   = pmState.cash < (r.position_size_usd || 4);
-    const equityFull = pmState.positions.filter(p=>p.type!=='crypto').length >= RISK.maxEquity && r.type !== 'crypto';
-    const blocked    = deployed || equityFull || pmState.safetyOverride;
-
-    return `<div class="card" style="padding:16px;margin-bottom:12px;border-left:3px solid ${scoreColor}">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-        <div>
-          <div style="display:flex;align-items:center;gap:8px">
+const el = document.getElementById('pm-recommendations');
+if (!el) return;
+if (!pmState.recommendations.length) {
+el.innerHTML = pmState.safetyOverride
+? '<div style="padding:16px;text-align:center;color:var(--wrn);font-family:var(--mono);font-size:12px">Safety override active — holding cash</div>'
+: '<div style="padding:16px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:12px">no opportunities scoring 75+ at this time</div>';
+return;
+}
+el.innerHTML = pmState.recommendations.map(r => {
+const finalScore = r.opportunity_score + (r.repeat_penalty || 0);
+const scoreColor = finalScore >= 85 ? 'var(--acc)' : finalScore >= 75 ? 'var(--wrn)' : 'var(--dng)';
+const confColor  = r.confidence >= 80 ? 'var(--acc)' : r.confidence >= 65 ? 'var(--wrn)' : 'var(--dng)';
+const penaltyStr = r.repeat_penalty ? '<span style="color:var(--dng);font-size:10px"> (-15 repeat)</span>' : '';
+const deployed   = pmState.cash < (r.position_size_usd || 4);
+const equityFull = pmState.positions.filter(p=>p.type!=='crypto').length >= RISK.maxEquity && r.type !== 'crypto';
+const blocked    = deployed || equityFull || pmState.safetyOverride;
+return `<div class="card" style="padding:16px;margin-bottom:12px;border-left:3px solid ${scoreColor}">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+<div>
+<div style="display:flex;align-items:center;gap:8px">
             <span style="font-family:var(--mono);font-size:18px;font-weight:600">${r.ticker}</span>
             <span style="font-size:11px;color:var(--muted)">${r.company || ''}</span>
             <span style="font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:4px;background:var(--surf2);color:var(--txt2)">${r.type?.toUpperCase() || 'STOCK'}</span>
@@ -2437,9 +2329,9 @@ function pmRenderRecommendations() {
         <div style="font-family:var(--mono);font-size:11px;color:var(--muted)">Position: <strong style="color:var(--txt)">$${(r.position_size_usd||4).toFixed(2)}</strong></div>
         <div style="font-family:var(--mono);font-size:11px;color:${confColor}">Confidence: ${r.confidence}%</div>
         ${blocked
-          ? '<span style="font-family:var(--mono);font-size:11px;color:var(--dng);margin-left:auto">' + (equityFull ? 'slots full' : pmState.safetyOverride ? 'safety override' : 'insufficient cash') + '</span>'
-          : '<button class="btn-p" style="margin:0 0 0 auto;padding:7px 16px;width:auto;font-size:12px" onclick="pmReviewOrder('' + r.ticker + '')">→ review &amp; buy</button>'}
-        <button class="btn-s" style="margin:0;padding:7px 12px;font-size:12px" onclick="pmSkipRecommendation('' + r.ticker + '')">skip</button>
+          ? `<span style="font-family:var(--mono);font-size:11px;color:var(--dng);margin-left:auto">${equityFull ? 'slots full' : pmState.safetyOverride ? 'safety override' : 'insufficient cash'}</span>`
+          : `<button class="btn-p" style="margin:0 0 0 auto;padding:7px 16px;width:auto;font-size:12px" onclick="pmReviewOrder('${r.ticker}')">→ review &amp; buy</button>`}
+        <button class="btn-s" style="margin:0;padding:7px 12px;font-size:12px" onclick="pmSkipRecommendation('${r.ticker}')">skip</button>
       </div>
     </div>`;
   }).join('');
@@ -2508,10 +2400,8 @@ function pmUpdatePortfolioUI() {
 function pmReviewOrder(ticker) {
   const rec = pmState.recommendations.find(r => r.ticker === ticker);
   if (!rec) return;
-
   const posSize = (rec.position_size_usd || pmState.capital * RISK.maxPosPct).toFixed(2);
   const estShares = (rec.current_price ? parseFloat(posSize) / rec.current_price : 0).toFixed(6);
-
   const prompt =
     'AI PORTFOLIO MANAGER — ORDER REVIEW REQUEST\n' +
     '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
@@ -2532,10 +2422,8 @@ function pmReviewOrder(ticker) {
     (botLiveMode
       ? 'LIVE MODE: Steps: 1) get_equity_quotes for ' + ticker + ' to confirm current price is within entry zone $' + (rec.entry_zone||'market') + ' 2) calculate shares = $' + posSize + ' ÷ price 3) review_equity_order 4) place_equity_order. Confirm fill price and shares.'
       : 'SIM MODE: Review this order and confirm it meets all risk rules. Reply with your analysis and whether you would execute this in live mode.');
-
   sendPrompt(prompt);
   pmAddLog('REVIEW', ticker, '$' + posSize + ' · target $' + rec.target + ' · stop $' + rec.stop_loss + ' · score ' + rec.opportunity_score);
-
   // Optimistically add position (will need manual confirmation)
   if (botLiveMode) {
     pmState.positions.push({
@@ -2560,7 +2448,6 @@ function pmSkipRecommendation(ticker) {
 function pmClosePosition(idx) {
   const pos = pmState.positions[idx];
   if (!pos) return;
-
   const prompt =
     'AI PORTFOLIO MANAGER — CLOSE POSITION\n' +
     '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
@@ -2570,7 +2457,6 @@ function pmClosePosition(idx) {
     'Account      : ••••0705 (agentic) — NOT ••••6689 (SPCX)\n' +
     '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
     'Steps: 1) get_equity_quotes for ' + pos.ticker + ' 2) review_equity_order 3) place_equity_order. Confirm fill price and P&L.';
-
   sendPrompt(prompt);
   pmState.cash += pos.cost || 0;
   pmState.positions.splice(idx, 1);
@@ -2602,7 +2488,6 @@ function pmDump() {
 function pmDumpConfirmed() {
   document.getElementById('dump-modal').style.display = 'none';
   if (!pmState.positions.length) return;
-
   pmState.positions.forEach(p => {
     sendPrompt(
       'EMERGENCY DUMP — ' + p.ticker + '\n' +
@@ -2613,7 +2498,6 @@ function pmDumpConfirmed() {
     pmAddLog('DUMP', p.ticker, 'emergency sell sent');
     pmState.cash += p.cost || 0;
   });
-
   pmState.positions = [];
   pmSaveState();
   pmRenderPositions();
@@ -2640,7 +2524,6 @@ function pmAddLog(action, ticker, notes) {
 // LIVE MODE (preserved from before)
 // ════════════════════════════════════════
 let botLiveMode = false;
-
 function toggleLiveMode() {
   if (!botLiveMode) {
     const input = document.getElementById('live-confirm-input');
@@ -2679,7 +2562,6 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.disabled = !valid; btn.style.opacity = valid ? '1' : '.4';
   });
 });
-
 function updateLiveModeUI() {
   const simPill  = document.getElementById('sim-pill');
   const livePill = document.getElementById('live-pill');
@@ -2731,7 +2613,6 @@ let pmSession = {
   simConfigs:     {},    // {ticker: {vol, drift}}
   alerts:         [],    // strategy alerts
 };
-
 // ── TOGGLE SESSION ─────────────────────────────────────────────
 function pmToggleSession() {
   if (!pmSession.running) {
@@ -2756,7 +2637,6 @@ function pmStartSession() {
   pmSession.simPositions = [];
   pmSession.alerts    = [];
   pmSession.nextCheckSecs = 300;
-
   // Seed sim prices from analysis recommendations
   pmState.recommendations.forEach(r => {
     if (r.current_price) {
@@ -2767,7 +2647,6 @@ function pmStartSession() {
       };
     }
   });
-
   // Update session button
   const btn = document.getElementById('pm-session-btn');
   if (btn) { btn.textContent = '■ Stop Session'; btn.style.background = 'var(--dng-d)'; btn.style.color = 'var(--dng)'; btn.style.borderColor = 'var(--dng)'; }
@@ -2775,18 +2654,14 @@ function pmStartSession() {
   // Show session bar
   const bar = document.getElementById('pm-session-bar');
   if (bar) bar.style.display = 'flex';
-
   // Show SIM journal
   const journal = document.getElementById('pm-sim-journal-wrap');
   if (journal) journal.style.display = 'block';
-
   // Show strategy alerts panel
   const alerts = document.getElementById('pm-strategy-alerts');
   if (alerts) alerts.style.display = 'block';
-
   // Auto-execute recommendations
   pmAutoExecuteAll();
-
   // Start intervals
   pmSession.timerInterval  = setInterval(pmTimerTick,  1000);
   pmSession.simInterval    = setInterval(pmSimTick,   30000);  // sim prices every 30s
@@ -2807,20 +2682,17 @@ function pmStopSession() {
   clearInterval(pmSession.timerInterval);
   clearInterval(pmSession.simInterval);
   clearInterval(pmSession.monitorInterval);
-
   const btn = document.getElementById('pm-session-btn');
   if (btn) { btn.textContent = '▶ Start Session'; btn.style.background = 'var(--acc-d)'; btn.style.color = 'var(--acc)'; btn.style.borderColor = 'var(--acc-b)'; }
 
   const bar = document.getElementById('pm-session-bar');
   if (bar) bar.style.display = 'none';
-
   // Session summary alert
   const net = pmSession.simPnL;
   pmAddStrategyAlert('SESSION', net >= 0 ? 'profit' : 'loss',
     'Session ended. ' + (botLiveMode ? 'LIVE' : 'SIM') + ' P&L: $' + net.toFixed(4) +
     ' | Trades: ' + pmSession.simTrades.length +
     ' | W' + pmSession.simWins + '/L' + pmSession.simLosses);
-
   pmAddLog('SESSION', botLiveMode ? 'LIVE' : 'SIM', 'Session stopped — P&L $' + net.toFixed(4));
 }
 
@@ -2833,14 +2705,12 @@ function pmTimerTick() {
   const s = elapsed % 60;
   const timerEl = document.getElementById('session-timer');
   if (timerEl) timerEl.textContent = h.toString().padStart(2,'0') + ':' + m.toString().padStart(2,'0') + ':' + s.toString().padStart(2,'0');
-
   // Countdown to next monitor
   pmSession.nextCheckSecs = Math.max(0, pmSession.nextCheckSecs - 1);
   const nextEl = document.getElementById('session-next-check');
   const nm = Math.floor(pmSession.nextCheckSecs / 60);
   const ns = pmSession.nextCheckSecs % 60;
   if (nextEl) nextEl.textContent = nm + ':' + ns.toString().padStart(2,'0');
-
   // Update P&L display
   const totalSimPnL = pmSession.simPnL +
     pmSession.simPositions.reduce((sum, p) => {
@@ -2862,7 +2732,6 @@ function pmAutoExecuteAll() {
     const finalScore = r.opportunity_score + (r.repeat_penalty || 0);
     return finalScore >= RISK.minScore;
   });
-
   if (!recs.length) {
     pmAddStrategyAlert('ANALYSIS','info','No opportunities scored 75+ — holding cash. Safety override active or market conditions unfavorable.');
     return;
@@ -2888,47 +2757,27 @@ function pmLiveExecute(rec) {
   }
 
   sendPrompt(
-    'AI PORTFOLIO MANAGER — AUTO-EXECUTE BUY
-' +
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-' +
-    'Symbol         : ' + rec.ticker + ' (' + (rec.company||'') + ')
-' +
-    'Action         : BUY (market order)
-' +
-    'SPEND EXACTLY  : $' + posSize + ' — DOLLAR AMOUNT NOT share price
-' +
-    'Est. shares    : ~' + estShares + '
-' +
-    'Entry zone     : $' + (rec.entry_zone||'market') + '
-' +
-    'Target         : $' + rec.target + '
-' +
-    'Stop loss      : $' + rec.stop_loss + '
-' +
-    'Hold period    : ' + (rec.hold_period||'—') + '
-' +
-    'Opp. score     : ' + (rec.opportunity_score + (rec.repeat_penalty||0)) + '/100
-' +
-    'Confidence     : ' + rec.confidence + '%
-' +
-    'Account        : ••••0705 (agentic) — NEVER ••••6689 (SPCX)
-' +
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-' +
-    'This is an autonomous session — execute immediately:
-' +
-    '1) get_equity_quotes for ' + rec.ticker + ' — confirm price is within entry zone
-' +
-    '2) If price acceptable: calculate shares = $' + posSize + ' ÷ current price
-' +
-    '3) review_equity_order
-' +
-    '4) place_equity_order
-' +
+    'AI PORTFOLIO MANAGER — AUTO-EXECUTE BUY\n' +
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+    'Symbol         : ' + rec.ticker + ' (' + (rec.company||'') + ')\n' +
+    'Action         : BUY (market order)\n' +
+    'SPEND EXACTLY  : $' + posSize + ' — DOLLAR AMOUNT NOT share price\n' +
+    'Est. shares    : ~' + estShares + '\n' +
+    'Entry zone     : $' + (rec.entry_zone||'market') + '\n' +
+    'Target         : $' + rec.target + '\n' +
+    'Stop loss      : $' + rec.stop_loss + '\n' +
+    'Hold period    : ' + (rec.hold_period||'—') + '\n' +
+    'Opp. score     : ' + (rec.opportunity_score + (rec.repeat_penalty||0)) + '/100\n' +
+    'Confidence     : ' + rec.confidence + '%\n' +
+    'Account        : ••••0705 (agentic) — NEVER ••••6689 (SPCX)\n' +
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+    'This is an autonomous session — execute immediately:\n' +
+    '1) get_equity_quotes for ' + rec.ticker + ' — confirm price is within entry zone\n' +
+    '2) If price acceptable: calculate shares = $' + posSize + ' ÷ current price\n' +
+    '3) review_equity_order\n' +
+    '4) place_equity_order\n' +
     'Confirm fill price and shares. Flag any issues.'
   );
-
   // Register position (confirmed when I respond)
   pmState.positions.push({
     ticker: rec.ticker, type: rec.type||'stock', sector: rec.sector,
@@ -2969,7 +2818,6 @@ function pmSimExecute(rec) {
   });
   pmSession.simCash -= posSize;
   pmSession.simPrices[rec.ticker] = rec.current_price;
-
   pmAddLog('SIM BUY', rec.ticker, '$' + posSize.toFixed(2) + ' @ $' + rec.current_price + ' | target $' + rec.target + ' | stop $' + rec.stop_loss);
   pmAddStrategyAlert(rec.ticker, 'buy', 'SIM: Paper BUY — ' + shares.toFixed(4) + ' shares @ $' + rec.current_price + ' | target $' + rec.target);
   pmRenderSimJournal();
@@ -2978,25 +2826,21 @@ function pmSimExecute(rec) {
 // ── SIM PRICE TICK (every 30s) ─────────────────────────────────
 function pmSimTick() {
   if (!pmSession.running || botLiveMode) return;
-
   // Move all tracked prices
   Object.keys(pmSession.simPrices).forEach(ticker => {
     const cfg = pmSession.simConfigs[ticker] || { vol: 0.002, drift: 0.0001 };
     const move = (Math.random() - 0.49) * cfg.vol + cfg.drift;
     pmSession.simPrices[ticker] = +(pmSession.simPrices[ticker] * (1 + move)).toFixed(4);
   });
-
   // Check each sim position for exits and alerts
   const toRemove = [];
   pmSession.simPositions.forEach((pos, idx) => {
     const price = pmSession.simPrices[pos.ticker] || pos.entryPrice;
     const gainPct = (price - pos.entryPrice) / pos.entryPrice;
     const gainUsd = gainPct * pos.cost;
-
     let exitReason = null;
     if (price >= pos.target)    exitReason = 'target hit ✓';
     if (price <= pos.stop_loss) exitReason = 'stop loss ✗';
-
     if (exitReason) {
       pmSession.simCash += price * pos.shares;
       pmSession.simPnL  += gainUsd;
@@ -3011,7 +2855,6 @@ function pmSimTick() {
       pmAddLog('SIM SELL', pos.ticker, exitReason + ' @ $' + price.toFixed(2) + ' | P&L $' + gainUsd.toFixed(4));
       pmAddStrategyAlert(pos.ticker, gainUsd >= 0 ? 'profit' : 'loss',
         'SIM: ' + exitReason + ' @ $' + price.toFixed(2) + ' | P&L ' + (gainUsd >= 0 ? '+' : '') + '$' + gainUsd.toFixed(4));
-
       // Strategy shift: if stopped out, suggest replacement
       if (exitReason.includes('stop')) {
         pmAddStrategyAlert(pos.ticker, 'shift',
@@ -3034,10 +2877,8 @@ function pmSimTick() {
         pos.ticker + ' down ' + Math.abs(gainPct*100).toFixed(1) + '% — approaching stop $' + pos.stop_loss + '. Consider tightening or exiting early.');
     }
   });
-
   // Remove exited positions
   toRemove.reverse().forEach(i => pmSession.simPositions.splice(i, 1));
-
   pmRenderSimJournal();
   pmUpdateSessionStats();
 }
@@ -3046,61 +2887,32 @@ function pmSimTick() {
 function pmMonitorTick() {
   if (!pmSession.running || !botLiveMode) return;
   pmSession.nextCheckSecs = 300;
-
   const posStr = pmState.positions.length
-    ? pmState.positions.map(p => '• ' + p.ticker + ': bought $' + (p.entryPrice||'—') + ', ' + p.shares.toFixed(4) + ' shares, stop $' + p.stop_loss + ', target $' + p.target).join('
-')
+    ? pmState.positions.map(p => '• ' + p.ticker + ': bought $' + (p.entryPrice||'—') + ', ' + p.shares.toFixed(4) + ' shares, stop $' + p.stop_loss + ', target $' + p.target).join('\n')
     : '• No open positions';
-
   const watchStr = (pmState.watchlist.stocks||[]).slice(0,5).join(', ') || 'none';
-
   sendPrompt(
-    'AUTONOMOUS PORTFOLIO MONITOR — v2.1.0
-' +
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-' +
-    'Account: ••••0705 | SPCX ••••6689 NEVER touched
-
-' +
-    'OPEN POSITIONS:
-' + posStr + '
-
-' +
-    'EXECUTE WITHOUT ASKING (pre-authorized autonomous monitor):
-' +
-    '1. get_equity_quotes for ALL positions + watchlist: ' + watchStr + '
-' +
-    '2. For each position:
-' +
-    '   — price ≤ stop loss → place_equity_order SELL immediately
-' +
-    '   — price ≥ target → place_equity_order SELL immediately
-' +
-    '   — unrealized gain ≥ 15% → flag as mandatory review
-' +
-    '   — position up 8%+ → consider raising stop to lock in gains
-' +
-    '3. Scan watchlist for new opportunities — check if any now scores 80+
-' +
-    '4. Assess if market regime has shifted since last analysis
-' +
-    '5. If confidence < 60% → do nothing, report why
-
-' +
-    'STRATEGY SHIFT CRITERIA (recommend if any apply):
-' +
-    '• Better opportunity detected (score 80+ vs current holdings)
-' +
-    '• Macro conditions shifted (Fed news, yield spike, geo event)
-' +
-    '• Position exceeded hold period — reassess thesis
-' +
-    '• Sector rotation signal detected
-
-' +
-    'Reply with: actions taken, current prices, P&L, any strategy shift recommendations.'
+    'AUTONOMOUS PORTFOLIO MONITOR — v2.1.0\n' +
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+    'Account: ••••0705 | SPCX ••••6689 NEVER touched\n' +
+'OPEN POSITIONS:\n' + posStr + '\n' +
+'EXECUTE WITHOUT ASKING (pre-authorized autonomous monitor):\n' +
+'1. get_equity_quotes for ALL positions + watchlist: ' + watchStr + '\n' +
+'2. For each position:\n' +
+    '   — price ≤ stop loss → place_equity_order SELL immediately\n' +
+    '   — price ≥ target → place_equity_order SELL immediately\n' +
+    '   — unrealized gain ≥ 15% → flag as mandatory review\n' +
+    '   — position up 8%+ → consider raising stop to lock in gains\n' +
+    '3. Scan watchlist for new opportunities — check if any now scores 80+\n' +
+    '4. Assess if market regime has shifted since last analysis\n' +
+    '5. If confidence < 60% → do nothing, report why\n' +
+'STRATEGY SHIFT CRITERIA (recommend if any apply):\n' +
+    '• Better opportunity detected (score 80+ vs current holdings)\n' +
+    '• Macro conditions shifted (Fed news, yield spike, geo event)\n' +
+    '• Position exceeded hold period — reassess thesis\n' +
+    '• Sector rotation signal detected\n' +
+'Reply with: actions taken, current prices, P&L, any strategy shift recommendations.'
   );
-
   pmAddLog('MONITOR', 'AUTO', 'Autonomous monitor fired — checking positions + market');
   pmAddStrategyAlert('MONITOR', 'info', 'Autonomous check sent to Claude — monitoring positions and scanning for opportunities.');
 }
@@ -3190,7 +3002,6 @@ function pmRenderStrategyAlerts() {
     block:  { bg:'var(--surf2)', border:'var(--bdr)',       text:'var(--muted)','icon':'—' },
     info:   { bg:'var(--surf2)', border:'var(--bdr)',       text:'var(--txt2)', icon:'·' },
   };
-
   el.innerHTML = pmSession.alerts.slice(0, 10).map(a => {
     const c = colors[a.type] || colors.info;
     return '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 12px;background:' + c.bg + ';border:1px solid ' + c.border + ';border-radius:7px">' +
