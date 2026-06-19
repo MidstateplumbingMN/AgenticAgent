@@ -299,6 +299,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
       <button class="ni" onclick="switchTab('sheets',this)"><span>▤</span> Sheets Log</button>
       <button class="ni" onclick="switchTab('risk',this)"><span>△</span> Risk Rules</button>
       <button class="ni" onclick="switchTab('goals',this)"><span>◎</span> Goals</button>
+      <button class="ni" onclick="switchTab('bot',this)"><span>⚡</span> Trading Bot</button>
       <div class="sp"></div>
       <button class="ni" onclick="switchTab('settings',this)"><span>⚙</span> Settings</button>
     </nav>
@@ -694,6 +695,123 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
             <button class="chip" onclick="sendPrompt('Based on my current portfolio value of $1,054 and my Robinhood positions, am I on track to hit my goals? Give me a specific action plan for today.')">am I on track? ↗</button>
             <button class="chip" onclick="sendPrompt('Suggest realistic daily, weekly, monthly, and yearly portfolio growth goals for someone starting with $1,054 who wants to reach $10,000.')">suggest goals for me ↗</button>
             <button class="chip" onclick="sendPrompt('What trades would help me hit my daily portfolio goal today given my $654 in buying power?')">what to do today ↗</button>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ── TRADING BOT ── -->
+      <div class="tab" id="tab-bot">
+        <div id="bot-app">
+
+          <!-- TOP CONTROLS -->
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end">
+            <div>
+              <div class="cl" style="margin-bottom:5px">Session Duration</div>
+              <select id="bot-duration" class="fi" style="width:140px;padding:8px 10px;font-size:12px">
+                <option value="30">30 minutes</option>
+                <option value="60" selected>1 hour</option>
+                <option value="90">1.5 hours</option>
+                <option value="120">2 hours</option>
+                <option value="180">3 hours</option>
+              </select>
+            </div>
+            <div>
+              <div class="cl" style="margin-bottom:5px">Budget</div>
+              <div style="display:flex;align-items:center;gap:4px">
+                <span style="font-family:var(--mono);color:var(--muted);font-size:13px">$</span>
+                <input id="bot-budget" type="number" class="fi" value="20" min="5" max="1000" step="5" style="width:90px;padding:8px 10px;font-size:12px">
+              </div>
+            </div>
+            <div>
+              <div class="cl" style="margin-bottom:5px">Net Profit Goal</div>
+              <div style="display:flex;align-items:center;gap:4px">
+                <span style="font-family:var(--mono);color:var(--muted);font-size:13px">$</span>
+                <input id="bot-goal" type="number" class="fi" value="1.00" min="0.10" step="0.10" style="width:90px;padding:8px 10px;font-size:12px">
+              </div>
+            </div>
+            <div>
+              <div class="cl" style="margin-bottom:5px">Tax Bracket</div>
+              <select id="bot-tax" class="fi" style="width:120px;padding:8px 10px;font-size:12px">
+                <option value="10">10%</option>
+                <option value="12">12%</option>
+                <option value="22" selected>22%</option>
+                <option value="24">24%</option>
+                <option value="32">32%</option>
+                <option value="35">35%</option>
+                <option value="37">37%</option>
+              </select>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:8px;align-items:flex-end">
+              <button id="bot-run-btn" class="btn-p" style="margin:0;padding:10px 22px;width:auto" onclick="botStart()">▶ Start Session</button>
+              <button id="bot-stop-btn" class="btn-p" style="margin:0;padding:10px 22px;width:auto;background:var(--dng-d);color:var(--dng);border:1px solid var(--dng);display:none" onclick="botStop()">■ Stop</button>
+            </div>
+          </div>
+
+          <!-- GOAL BANNER -->
+          <div id="bot-goal-banner" style="padding:10px 16px;background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;display:flex;gap:24px;margin-bottom:16px;font-family:var(--mono);font-size:12px;flex-wrap:wrap">
+            <span>Budget: <span id="bb-budget" style="color:var(--acc)">$20.00</span></span>
+            <span>Net goal: <span id="bb-netgoal" style="color:var(--acc)">$1.00</span></span>
+            <span>Gross needed: <span id="bb-gross" style="color:var(--wrn)">$1.28</span></span>
+            <span>Tax @ <span id="bb-taxpct">22</span>%: <span id="bb-tax" style="color:var(--dng)">$0.28</span></span>
+            <span style="margin-left:auto">Time left: <span id="bb-time" style="color:var(--acc)">--:--</span></span>
+          </div>
+
+          <!-- SESSION P&L BAR -->
+          <div style="margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:5px">
+              <span>Session P&L</span>
+              <span id="bot-pnl-pct">0.0%</span>
+            </div>
+            <div style="background:var(--surf2);border-radius:4px;height:8px;overflow:hidden">
+              <div id="bot-pnl-bar" style="height:100%;border-radius:4px;width:0%;background:var(--acc);transition:width .5s,background .3s"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;margin-top:4px">
+              <span id="bot-pnl-val" style="color:var(--acc)">$0.0000</span>
+              <span style="color:var(--muted)" id="bot-gross-target">target: $1.28</span>
+            </div>
+          </div>
+
+          <!-- TICKER CARDS -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px" id="bot-ticker-grid">
+            <!-- filled by JS -->
+          </div>
+
+          <!-- TRADE LOG + STATS -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="card" style="padding:14px">
+              <div class="cl" style="margin-bottom:10px">Session Stats</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div style="background:var(--surf2);border-radius:6px;padding:8px;text-align:center">
+                  <div style="font-size:10px;color:var(--muted);font-family:var(--mono)">TRADES</div>
+                  <div style="font-family:var(--mono);font-size:18px;font-weight:600" id="stat-trades">0</div>
+                </div>
+                <div style="background:var(--surf2);border-radius:6px;padding:8px;text-align:center">
+                  <div style="font-size:10px;color:var(--muted);font-family:var(--mono)">WIN RATE</div>
+                  <div style="font-family:var(--mono);font-size:18px;font-weight:600" id="stat-wr">—</div>
+                </div>
+                <div style="background:var(--surf2);border-radius:6px;padding:8px;text-align:center">
+                  <div style="font-size:10px;color:var(--muted);font-family:var(--mono)">GROSS P&L</div>
+                  <div style="font-family:var(--mono);font-size:16px;font-weight:600;color:var(--acc)" id="stat-gross">$0.00</div>
+                </div>
+                <div style="background:var(--surf2);border-radius:6px;padding:8px;text-align:center">
+                  <div style="font-size:10px;color:var(--muted);font-family:var(--mono)">NET (AFTER TAX)</div>
+                  <div style="font-family:var(--mono);font-size:16px;font-weight:600;color:var(--acc)" id="stat-net">$0.00</div>
+                </div>
+              </div>
+              <div id="bot-status-msg" style="margin-top:10px;padding:8px 12px;border-radius:6px;font-family:var(--mono);font-size:11px;display:none"></div>
+            </div>
+            <div class="card" style="padding:14px">
+              <div class="cl" style="margin-bottom:8px">Trade Log</div>
+              <div id="bot-log" style="max-height:180px;overflow-y:auto;font-family:var(--mono);font-size:11px;display:flex;flex-direction:column;gap:3px">
+                <div style="color:var(--muted);text-align:center;padding:20px 0">session not started</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ROUTE TO CLAUDE NOTICE -->
+          <div class="notice n-acc" style="margin-top:14px">
+            <strong>How it works:</strong> Each buy/sell signal routes through Claude chat which executes the order via Robinhood MCP on account ••••0705. Your SPCX in ••••6689 is never touched. All trades are logged to your Google Sheet automatically.
           </div>
         </div>
       </div>
@@ -1657,6 +1775,225 @@ function goStep1() {
   document.getElementById('si0').classList.remove('active');
   document.getElementById('si1').classList.add('active');
 }
+
+// ════════════════════════════════════════
+// TRADING BOT ENGINE
+// ════════════════════════════════════════
+const BOT_WATCHLIST = [
+  {ticker:'TQQQ',name:'3x Nasdaq',   color:'#00D4A8',seed:82.98, vol:0.003,drift:0.0003,dip:0.002,peak:0.003,stop:0.010,target:0.10},
+  {ticker:'FNGU',name:'3x FANG+',   color:'#A78BFA',seed:29.35, vol:0.005,drift:0.0004,dip:0.003,peak:0.004,stop:0.012,target:0.10},
+  {ticker:'TNA', name:'3x Small Cap',color:'#F59E0B',seed:71.49, vol:0.004,drift:0.0002,dip:0.003,peak:0.004,stop:0.012,target:0.10},
+  {ticker:'NVDA',name:'NVIDIA',      color:'#60A5FA',seed:210.33,vol:0.002,drift:0.0002,dip:0.002,peak:0.003,stop:0.008,target:0.10},
+];
+let botState = {
+  running:false,startTime:null,durationMs:0,budget:20,netGoal:1,
+  grossTarget:1.28,taxPct:22,grossProfit:0,wins:0,losses:0,trades:0,
+  interval:null,timerInterval:null,positions:{},prices:{},highs:{},
+  lows:{},histories:{},slotSize:5,
+};
+function botRecalcGoal(){
+  const budget=parseFloat(document.getElementById('bot-budget')?.value)||20;
+  const netGoal=parseFloat(document.getElementById('bot-goal')?.value)||1;
+  const tax=parseInt(document.getElementById('bot-tax')?.value)||22;
+  const gross=netGoal/(1-tax/100);
+  const taxAmt=gross-netGoal;
+  const dur=parseInt(document.getElementById('bot-duration')?.value)||60;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('bb-budget','$'+budget.toFixed(2));
+  set('bb-netgoal','$'+netGoal.toFixed(2));
+  set('bb-gross','$'+gross.toFixed(2));
+  set('bb-tax','$'+taxAmt.toFixed(2));
+  set('bb-taxpct',tax);
+  set('bot-gross-target','target: $'+gross.toFixed(2));
+  botState.budget=budget;botState.netGoal=netGoal;
+  botState.grossTarget=gross;botState.taxPct=tax;
+  botState.durationMs=dur*60*1000;botState.slotSize=budget/BOT_WATCHLIST.length;
+}
+function botInitCards(){
+  const grid=document.getElementById('bot-ticker-grid');
+  if(!grid)return;
+  grid.innerHTML=BOT_WATCHLIST.map(cfg=>`
+    <div class="card" style="padding:14px;border-top:3px solid ${cfg.color}" id="bc-${cfg.ticker}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div><div style="font-family:var(--mono);font-size:15px;font-weight:600">${cfg.ticker}</div><div style="font-size:11px;color:var(--muted)">${cfg.name}</div></div>
+        <div style="text-align:right"><div style="font-family:var(--mono);font-size:15px;font-weight:600" id="bp-${cfg.ticker}">$${cfg.seed.toFixed(2)}</div><div style="font-size:11px;font-family:var(--mono)" id="bchg-${cfg.ticker}">—</div></div>
+      </div>
+      <canvas id="bchart-${cfg.ticker}" height="44" style="width:100%;display:block;margin-bottom:8px"></canvas>
+      <div style="display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono)">
+        <div><span style="color:var(--muted)">position</span><div id="bpos-${cfg.ticker}" style="color:var(--muted)">flat</div></div>
+        <div style="text-align:center"><span style="color:var(--muted)">p&l</span><div id="bpnl-${cfg.ticker}" style="color:var(--muted)">—</div></div>
+        <div style="text-align:right"><span style="color:var(--muted)">signal</span><div id="bsig-${cfg.ticker}" style="color:var(--muted)">watching</div></div>
+      </div>
+    </div>`).join('');
+}
+function botDrawChart(ticker,color){
+  const canvas=document.getElementById('bchart-'+ticker);
+  if(!canvas)return;
+  const hist=botState.histories[ticker]||[];
+  if(hist.length<2)return;
+  const w=canvas.offsetWidth||220;const h=44;
+  canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,w,h);
+  const mn=Math.min(...hist),mx=Math.max(...hist),rng=mx-mn||0.01;
+  ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=1.5;
+  hist.forEach((v,i)=>{
+    const x=(i/(hist.length-1))*w;
+    const y=h-((v-mn)/rng)*(h-4)-2;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();
+  ctx.fillStyle=color+'18';ctx.fill();
+}
+function botUpdateCard(cfg,price){
+  const t=cfg.ticker;const pos=botState.positions[t];
+  const hist=botState.histories[t];
+  const open=hist&&hist[0]?hist[0]:price;
+  const chgPct=(price-open)/open*100;
+  const set=(id,v,c)=>{const e=document.getElementById(id);if(e){e.textContent=v;if(c)e.style.color=c;}};
+  set('bp-'+t,'$'+price.toFixed(4));
+  set('bchg-'+t,(chgPct>=0?'+':'')+chgPct.toFixed(2)+'%',chgPct>=0?'var(--acc)':'var(--dng)');
+  const card=document.getElementById('bc-'+t);
+  if(pos){
+    const pnl=(price-pos.bp)*pos.shares;
+    const gPct=(price-pos.bp)/pos.bp;
+    const gUsd=(price-pos.bp)*pos.shares;
+    set('bpos-'+t,pos.shares.toFixed(4)+' @ $'+pos.bp.toFixed(2),'var(--txt)');
+    set('bpnl-'+t,(pnl>=0?'+':'')+'$'+pnl.toFixed(4),pnl>=0?'var(--acc)':'var(--dng)');
+    if(card)card.style.background=pnl>=0?'rgba(0,212,168,0.05)':'rgba(255,107,53,0.05)';
+    let sig='holding';let sigC='var(--wrn)';
+    if(gUsd>=cfg.target){sig='SELL target';sigC='var(--acc)';}
+    else if(gPct>=cfg.peak){sig='SELL peak';sigC='var(--acc)';}
+    else if(gPct<=-cfg.stop){sig='SELL stop!';sigC='var(--dng)';}
+    set('bsig-'+t,sig,sigC);
+  } else {
+    const dip=botState.highs[t]?(botState.highs[t]-price)/botState.highs[t]:0;
+    set('bpos-'+t,'flat','var(--muted)');
+    set('bpnl-'+t,'—','var(--muted)');
+    if(card)card.style.background='';
+    set('bsig-'+t,dip>=cfg.dip?'BUY dip!':(dip*100).toFixed(2)+'% dip',dip>=cfg.dip?'var(--acc)':'var(--muted)');
+  }
+  botDrawChart(t,cfg.color);
+}
+function botUpdateStats(){
+  const tax=botState.grossProfit*(botState.taxPct/100);
+  const net=botState.grossProfit-tax;
+  const pct=Math.min(100,(botState.grossProfit/botState.grossTarget)*100);
+  const bar=document.getElementById('bot-pnl-bar');
+  if(bar){bar.style.width=pct+'%';bar.style.background=pct>=100?'var(--acc)':pct>=50?'var(--acc)':'var(--wrn)';}
+  const set=(id,v,c)=>{const e=document.getElementById(id);if(e){e.textContent=v;if(c)e.style.color=c;}};
+  set('bot-pnl-pct',pct.toFixed(1)+'%');
+  set('bot-pnl-val',(botState.grossProfit>=0?'+':'')+'$'+botState.grossProfit.toFixed(4),botState.grossProfit>=0?'var(--acc)':'var(--dng)');
+  set('stat-gross','$'+botState.grossProfit.toFixed(4),botState.grossProfit>=0?'var(--acc)':'var(--dng)');
+  set('stat-net','$'+net.toFixed(4),net>=0?'var(--acc)':'var(--dng)');
+  set('stat-trades',botState.trades);
+  const tot=botState.wins+botState.losses;
+  set('stat-wr',tot>0?Math.round(botState.wins/tot*100)+'%':'—');
+}
+function botAddLog(action,ticker,price,pnl,reason){
+  const logEl=document.getElementById('bot-log');if(!logEl)return;
+  const ts=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const color=action==='BUY'?'var(--acc)':pnl===null?'var(--muted)':pnl>=0?'var(--acc)':'var(--dng)';
+  const pnlStr=pnl!==null&&action==='SELL'?((pnl>=0?'+':'')+' $'+pnl.toFixed(4)):'';
+  const e=document.createElement('div');
+  e.style.cssText='display:flex;gap:6px;padding:2px 0;border-bottom:1px solid var(--bdr);flex-wrap:wrap';
+  e.innerHTML=`<span style="color:var(--muted);min-width:58px;font-size:10px">${ts}</span><span style="color:${color};min-width:38px">${action}</span><span style="min-width:36px">${ticker}</span>${price?`<span style="min-width:52px">$${price.toFixed(2)}</span>`:'<span style="min-width:52px"></span>'}<span style="color:${color};min-width:64px">${pnlStr}</span><span style="color:var(--muted);font-size:10px">${reason}</span>`;
+  if(logEl.children[0]&&logEl.children[0].style.textAlign==='center')logEl.innerHTML='';
+  logEl.insertBefore(e,logEl.firstChild);
+}
+function botTick(){
+  if(!botState.running)return;
+  const elapsed=Date.now()-botState.startTime;
+  if(elapsed>=botState.durationMs){botStop(true);return;}
+  BOT_WATCHLIST.forEach(cfg=>{
+    const t=cfg.ticker;
+    const move=(Math.random()-0.47)*cfg.vol+cfg.drift;
+    botState.prices[t]=+(botState.prices[t]*(1+move)).toFixed(4);
+    const price=botState.prices[t];
+    if(!botState.highs[t]||price>botState.highs[t])botState.highs[t]=price;
+    if(!botState.lows[t]||price<botState.lows[t])botState.lows[t]=price;
+    if(!botState.histories[t])botState.histories[t]=[];
+    botState.histories[t].push(price);
+    if(botState.histories[t].length>60)botState.histories[t].shift();
+    const pos=botState.positions[t];
+    if(pos){
+      const gPct=(price-pos.bp)/pos.bp;
+      const gUsd=(price-pos.bp)*pos.shares;
+      let reason=null;
+      if(gUsd>=cfg.target)reason='target +$'+gUsd.toFixed(4);
+      else if(gPct>=cfg.peak)reason='peak +'+(gPct*100).toFixed(2)+'%';
+      else if(gPct<=-cfg.stop)reason='stop '+(gPct*100).toFixed(2)+'%';
+      if(reason){
+        botState.grossProfit+=gUsd;botState.trades++;
+        if(gUsd>=0)botState.wins++;else botState.losses++;
+        botAddLog('SELL',t,price,gUsd,reason);
+        delete botState.positions[t];
+        // Route to Claude for real order
+        sendPrompt('BOT SELL: '+t+' market order on account ••••0705 — '+pos.shares.toFixed(4)+' shares. Reason: '+reason+'. Please execute and confirm fill.');
+        if(botState.grossProfit>=botState.grossTarget){
+          const net=botState.grossProfit*(1-botState.taxPct/100);
+          const statusEl=document.getElementById('bot-status-msg');
+          if(statusEl){statusEl.style.display='block';statusEl.style.background='var(--acc-d)';statusEl.style.border='1px solid var(--acc-b)';statusEl.style.color='var(--acc)';statusEl.textContent='🎉 Goal reached! Gross $'+botState.grossProfit.toFixed(4)+' · Tax $'+(botState.grossProfit*botState.taxPct/100).toFixed(4)+' · Net $'+net.toFixed(4);}
+          botStop(false);return;
+        }
+      }
+    }
+    if(!pos&&botState.highs[t]){
+      const dip=(botState.highs[t]-price)/botState.highs[t];
+      if(dip>=cfg.dip){
+        const shares=+(botState.slotSize/price).toFixed(6);
+        botState.positions[t]={bp:price,shares};
+        botState.trades++;
+        botAddLog('BUY',t,price,null,'dip '+(dip*100).toFixed(2)+'%');
+        // Route to Claude for real order
+        sendPrompt('BOT BUY: '+t+' market order on account ••••0705 — $'+botState.slotSize.toFixed(2)+'. Reason: dip '+(dip*100).toFixed(2)+'% below session high. Please execute and confirm fill price and shares.');
+      }
+    }
+    botUpdateCard(cfg,price);
+  });
+  botUpdateStats();
+}
+function botUpdateTimer(){
+  if(!botState.running)return;
+  const rem=Math.max(0,botState.durationMs-(Date.now()-botState.startTime));
+  const m=Math.floor(rem/60000);const s=Math.floor((rem%60000)/1000);
+  const el=document.getElementById('bb-time');
+  if(el)el.textContent=m.toString().padStart(2,'0')+':'+s.toString().padStart(2,'0');
+}
+function botStart(){
+  botRecalcGoal();
+  Object.assign(botState,{running:true,startTime:Date.now(),grossProfit:0,wins:0,losses:0,trades:0,positions:{},prices:{},highs:{},lows:{},histories:{}});
+  botState.slotSize=botState.budget/BOT_WATCHLIST.length;
+  BOT_WATCHLIST.forEach(cfg=>{
+    botState.prices[cfg.ticker]=cfg.seed;
+    botState.highs[cfg.ticker]=cfg.seed;
+    botState.lows[cfg.ticker]=cfg.seed;
+    botState.histories[cfg.ticker]=[cfg.seed];
+  });
+  botInitCards();
+  const logEl=document.getElementById('bot-log');if(logEl)logEl.innerHTML='';
+  const statusEl=document.getElementById('bot-status-msg');if(statusEl){statusEl.style.display='none';statusEl.textContent='';}
+  document.getElementById('bot-run-btn').style.display='none';
+  document.getElementById('bot-stop-btn').style.display='block';
+  botAddLog('START','BOT',0,null,'$'+botState.budget+' · '+botState.durationMs/60000+'min · gross target $'+botState.grossTarget.toFixed(2));
+  botState.interval=setInterval(botTick,5000);
+  botState.timerInterval=setInterval(botUpdateTimer,1000);
+  resetIdle();
+}
+function botStop(timeUp){
+  botState.running=false;
+  clearInterval(botState.interval);clearInterval(botState.timerInterval);
+  document.getElementById('bot-run-btn').style.display='block';
+  document.getElementById('bot-stop-btn').style.display='none';
+  const el=document.getElementById('bb-time');if(el)el.textContent=timeUp?'00:00':'done';
+  const net=botState.grossProfit*(1-botState.taxPct/100);
+  botAddLog('END','BOT',0,botState.grossProfit,timeUp?'time up · net $'+net.toFixed(4):'goal reached · net $'+net.toFixed(4));
+}
+['bot-duration','bot-budget','bot-goal','bot-tax'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el){el.addEventListener('change',botRecalcGoal);el.addEventListener('input',botRecalcGoal);}
+});
 
 // ════════════════════════════════════════
 // BOOT
