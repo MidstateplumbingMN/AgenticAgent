@@ -701,7 +701,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
       </div>
 
 
-      <!-- ── TRADING BOT v2.0.0 ── -->
+      <!-- ── TRADING BOT v2.1.0 ── -->
       <div class="tab" id="tab-bot">
         <div id="bot-app">
 
@@ -960,7 +960,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
         <div class="card" style="max-width:440px;padding:14px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <div>
-              <div style="font-family:var(--mono);font-size:16px;font-weight:600;color:var(--acc)" id="settings-version-num">v2.1.0</div>
+              <div style="font-family:var(--mono);font-size:16px;font-weight:600;color:var(--acc)" id="settings-version-num" class="app-version">v2.1.0</div>
               <div style="font-size:12px;color:var(--muted);margin-top:2px">Full Changelog + Version Tracking</div>
             </div>
             <button class="btn-s" style="margin:0;padding:7px 14px;font-size:12px" onclick="showChangelog()">view full changelog</button>
@@ -1914,31 +1914,89 @@ const APP_VERSION = {
 
 // ── FULL CHANGELOG ────────────────────────────────────────────
 const CHANGELOG = [
-  { version:'v2.1.0', date:'2026-06-19', type:'minor', label:'Full Changelog + Version Tracking',
-    changes:['Full changelog visible in Settings → Version History','"What's New" modal on first login after each update','Version badge clickable — opens full changelog','localStorage tracks last-seen version — new updates highlighted','All prior releases documented with complete change notes'] },
-  { version:'v2.0.0', date:'2026-06-19', type:'major', label:'AI Portfolio Manager Integration',
-    changes:['Full AI Portfolio Manager system prompt integrated','Market Regime + Macro Economic + Geopolitical Engines','Opportunity Scoring Model — only recommend 75+ scores','Buffett Quality Score on all recommendations','14-day repeat penalty (-15 without catalyst)','Safety override — do nothing if confidence < 60%','SIM mode: paper trades with real-like price simulation','LIVE mode: fully autonomous — auto-executes 75+ scored recs','Strategy alerts: proactive shift recommendations','Autonomous 5-min monitor fires to Claude for live execution','Removed leveraged ETFs (TQQQ/FNGU/SOXL) — rule violation','Max 2 equity + 1 crypto positions enforced','Min 15% cash reserve always maintained'] },
-  { version:'v1.5.0', date:'2026-06-19', type:'minor', label:'Position Mode Controls + Dump Button',
-    changes:['Position mode: 1 per ticker / 1 total / 2 max / confirm each','Dump All button with confirmation modal showing live P&L','botCanBuy() enforces limits on every tick','BUY/SELL prompts use SPEND EXACTLY / SELL EXACTLY labels','SPCX ••••6689 explicitly protected in all order prompts'] },
-  { version:'v1.4.0', date:'2026-06-19', type:'minor', label:'Live Mode Switch + Safety Gate',
-    changes:['SIM / LIVE toggle in Trading Bot tab','Requires typing "LIVE" to confirm activation','Red pulsing banner when live trading active','Bot auto-resets to SIM after every session ends','Cannot switch modes mid-session'] },
-  { version:'v1.3.0', date:'2026-06-19', type:'minor', label:'Trading Bot + Timed Sessions',
-    changes:['Trading Bot tab with multi-stock session support','Timed sessions with tax-adjusted profit goal calculator','PDT rule eliminated June 4 2026 — no restrictions','Live ticker cards with mini price charts','4-slot position system with configurable budget'] },
-  { version:'v1.2.0', date:'2026-06-19', type:'minor', label:'Goals Tab + Multi-Period Tracking',
-    changes:['Goals tab: Daily, Weekly, Monthly, Yearly, Custom','SVG progress rings, streak tracker, 8 portfolio milestones','AI Goal Coach chips','Overview strip: 4-card goal summary'] },
-  { version:'v1.1.0', date:'2026-06-19', type:'minor', label:'Portable Config Token',
-    changes:['Export/import config token for cross-device access','Three-step setup wizard','Import sends to lock screen — password still required'] },
-  { version:'v1.0.0', date:'2026-06-10', type:'major', label:'Initial Release',
-    changes:['Password-protected with SHA-256 + salt + brute-force lockout','15-min inactivity auto-lock','Content Security Policy meta tag','Google OAuth + Sheets integration (token in-memory only)','Live Robinhood data via MCP (accounts ••••6689 + ••••0705)','7 tabs: Overview, Positions, Picks, Smart Money, AI Advisor, Orders, Risk','GitHub Pages at midstateplumbingmn.github.io/AgenticAgent/aagent.html','Google Apps Script for automated sheet setup'] },
-];
+  { version:"v2.1.0", date:"2026-06-19", type:"minor", label:"Full Changelog + Version Tracking",
+    changes:[
+      "Full changelog visible in Settings",
+      "What's New modal on first login after each update",
+      "Version badge clickable — opens full changelog",
+      "localStorage tracks last-seen version",
+      "All prior releases documented with complete change notes"
+    ]},
+  { version:"v2.0.0", date:"2026-06-19", type:"major", label:"AI Portfolio Manager Integration",
+    changes:[
+      "Full AI Portfolio Manager system prompt integrated",
+      "Market Regime + Macro Economic + Geopolitical Engines",
+      "Opportunity Scoring Model — 75+ threshold required",
+      "Buffett Quality Score on all recommendations",
+      "14-day repeat penalty without catalyst",
+      "Safety override when confidence below 60%",
+      "SIM mode: paper trades with realistic price simulation",
+      "LIVE mode: fully autonomous execution",
+      "Strategy alerts: proactive shift recommendations",
+      "Autonomous 5-min monitor fires to Claude for execution",
+      "Removed leveraged ETFs — rule violation",
+      "Max 2 equity + 1 crypto positions enforced",
+      "Min 15% cash reserve always maintained"
+    ]},
+  { version:"v1.5.0", date:"2026-06-19", type:"minor", label:"Position Mode Controls + Dump Button",
+    changes:[
+      "Position mode: 1 per ticker / 1 total / 2 max / confirm each",
+      "Dump All button with confirmation modal",
+      "botCanBuy() enforces limits on every tick",
+      "SPEND EXACTLY / SELL EXACTLY labels on all order prompts",
+      "SPCX account 6689 explicitly protected in all prompts"
+    ]},
+  { version:"v1.4.0", date:"2026-06-19", type:"minor", label:"Live Mode Switch + Safety Gate",
+    changes:[
+      "SIM / LIVE toggle in Trading Bot tab",
+      "Requires typing LIVE to confirm activation",
+      "Red pulsing banner when live trading active",
+      "Bot auto-resets to SIM after every session",
+      "Cannot switch modes mid-session"
+    ]},
+  { version:"v1.3.0", date:"2026-06-19", type:"minor", label:"Trading Bot + Timed Sessions",
+    changes:[
+      "Trading Bot tab with multi-stock session support",
+      "Timed sessions with tax-adjusted profit goal calculator",
+      "PDT rule eliminated June 4 2026",
+      "Live ticker cards with mini price charts",
+      "4-slot position system with configurable budget"
+    ]},
+  { version:"v1.2.0", date:"2026-06-19", type:"minor", label:"Goals Tab + Multi-Period Tracking",
+    changes:[
+      "Goals tab: Daily, Weekly, Monthly, Yearly, Custom",
+      "SVG progress rings, streak tracker, 8 portfolio milestones",
+      "AI Goal Coach chips",
+      "Overview strip: 4-card goal summary"
+    ]},
+  { version:"v1.1.0", date:"2026-06-19", type:"minor", label:"Portable Config Token",
+    changes:[
+      "Export/import config token for cross-device access",
+      "Three-step setup wizard",
+      "Import sends to lock screen — password still required"
+    ]},
+  { version:"v1.0.0", date:"2026-06-10", type:"major", label:"Initial Release",
+    changes:[
+      "Password-protected with SHA-256 + salt + brute-force lockout",
+      "15-min inactivity auto-lock with CSP meta tag",
+      "Google OAuth + Sheets integration — token in-memory only",
+      "Live Robinhood data via MCP",
+      "7 tabs: Overview, Positions, Picks, Smart Money, Advisor, Orders, Risk",
+      "GitHub Pages hosted dashboard",
+      "Google Apps Script for automated sheet setup"
+    ]}
+]
 
 function displayVersion() {
   document.querySelectorAll('.app-version').forEach(el => {
     el.textContent = APP_VERSION.number;
     el.style.cursor = 'pointer';
-    el.title = 'View changelog';
+    el.title = 'Click to view changelog — ' + APP_VERSION.label;
     el.onclick = (e) => { e.stopPropagation(); showChangelog(); };
   });
+  // Also update any version labels that show the release name
+  const labelEl = document.querySelector('.app-version-label');
+  if (labelEl) labelEl.textContent = APP_VERSION.label;
 }
 
 function checkVersionUpdate() {
@@ -2155,7 +2213,7 @@ REQUIRED — use web search for current data:
 
 RESPOND ONLY WITH THIS JSON (no other text, no markdown fences):
 {
-  "version": "v2.0.0",
+  "version": "v2.1.0",
   "timestamp": "ISO_DATE",
   "regime": "Bull Market",
   "macro": "Bullish",
@@ -2997,7 +3055,7 @@ function pmMonitorTick() {
   const watchStr = (pmState.watchlist.stocks||[]).slice(0,5).join(', ') || 'none';
 
   sendPrompt(
-    'AUTONOMOUS PORTFOLIO MONITOR — v2.0.0
+    'AUTONOMOUS PORTFOLIO MONITOR — v2.1.0
 ' +
     '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ' +
