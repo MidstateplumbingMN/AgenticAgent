@@ -22,7 +22,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#0A0F1E;--surf:#0D1B2A;--surf2:#112236;
-  --acc:#00D4A8;--acc-d:#00D4A820;--acc-b:#00D4A840;
+  --acc:#00D4A8;--acc-d:#00D4A820;--acc-b:#00D4A840;--acc2:#4ADE80;
   --dng:#FF6B35;--dng-d:#FF6B3520;
   --wrn:#F59E0B;--wrn-d:#F59E0B20;
   --muted:#8892A4;--bdr:#1A3050;
@@ -263,7 +263,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 <div class="screen" id="screen-lock">
   <div class="box" id="lock-box">
     <div class="logo-mark">▸ PORTFOLIO TERMINAL</div>
-    <div class="logo-sub">SECURED ACCESS · <span class="app-version">v2.3.2</span></div>
+    <div class="logo-sub">SECURED ACCESS · <span class="app-version">v2.4.1</span></div>
     <div class="lock-icon">🔒</div>
     <div class="fl" style="margin-top:0">Password</div>
     <input class="fi" type="password" id="l-pw" placeholder="••••••••" autocomplete="current-password">
@@ -310,7 +310,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
     <div class="topbar">
       <span class="page-ttl" id="page-ttl">// overview</span>
       <div class="live-pill"><div class="dot"></div>LIVE · RH_MCP</div>
-      <span class="app-version" style="font-family:var(--mono);font-size:10px;color:var(--muted)">v2.3.2</span>
+      <span class="app-version" style="font-family:var(--mono);font-size:10px;color:var(--muted)">v2.4.1</span>
     </div>
     <div class="content">
 
@@ -745,7 +745,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
             <div style="display:flex;align-items:center;gap:10px">
               <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">AI PORTFOLIO MANAGER</span>
-              <span class="app-version" style="font-family:var(--mono);font-size:11px;font-weight:600;color:var(--acc);background:var(--acc-d);padding:2px 10px;border-radius:4px;border:1px solid var(--acc-b)">v2.3.2</span>
+              <span class="app-version" style="font-family:var(--mono);font-size:11px;font-weight:600;color:var(--acc);background:var(--acc-d);padding:2px 10px;border-radius:4px;border:1px solid var(--acc-b)">v2.4.1</span>
             </div>
             <div style="display:flex;gap:8px;align-items:center">
               <div id="mode-toggle" onclick="toggleLiveMode()" style="display:flex;align-items:center;border-radius:8px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;user-select:none;height:34px">
@@ -788,15 +788,113 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
             <div id="pm-alerts-list" style="display:flex;flex-direction:column;gap:6px"></div>
           </div>
 
+          <!-- OBJECTIVE + PLAN PANEL -->
+          <div class="card" style="padding:0;margin-bottom:14px;overflow:hidden;border:1px solid var(--acc-b)">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--acc-d);border-bottom:1px solid var(--acc-b)">
+              <div style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--acc);letter-spacing:.5px">◎ OBJECTIVE &amp; PLAN</div>
+              <button id="obj-edit-btn" class="btn-s" style="margin:0;padding:5px 12px;font-size:11px;width:auto" onclick="objToggleEdit()">edit objective</button>
+            </div>
+
+            <!-- OBJECTIVE EDITOR (hidden by default) -->
+            <div id="obj-editor" style="display:none;padding:16px;border-bottom:1px solid var(--bdr);background:var(--surf2)">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div>
+                  <div class="fl" style="margin-top:0">Objective type</div>
+                  <select class="fi" id="obj-type" onchange="objPreviewPlan()">
+                    <option value="grow">Grow capital (target $)</option>
+                    <option value="income">Generate income</option>
+                    <option value="beatspy">Beat SPY</option>
+                    <option value="btc">Accumulate Bitcoin</option>
+                    <option value="preserve">Capital preservation</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+                <div>
+                  <div class="fl" style="margin-top:0">Risk tolerance</div>
+                  <select class="fi" id="obj-risk" onchange="objPreviewPlan()">
+                    <option value="conservative">Conservative</option>
+                    <option value="moderate" selected>Moderate</option>
+                    <option value="aggressive">Aggressive</option>
+                  </select>
+                </div>
+                <div>
+                  <div class="fl" style="margin-top:0">Starting capital ($)</div>
+                  <input class="fi" id="obj-start" type="number" value="1000" onchange="objPreviewPlan()">
+                </div>
+                <div>
+                  <div class="fl" style="margin-top:0">Target capital ($)</div>
+                  <input class="fi" id="obj-target" type="number" value="2000" onchange="objPreviewPlan()">
+                </div>
+                <div>
+                  <div class="fl" style="margin-top:0">Timeline (days)</div>
+                  <input class="fi" id="obj-timeline" type="number" value="180" onchange="objPreviewPlan()">
+                </div>
+                <div>
+                  <div class="fl" style="margin-top:0">Strategy profile</div>
+                  <select class="fi" id="obj-strategy" onchange="objPreviewPlan()">
+                    <option value="growth">Growth</option>
+                    <option value="value">Value</option>
+                    <option value="momentum">Momentum</option>
+                    <option value="balanced" selected>Balanced</option>
+                  </select>
+                </div>
+              </div>
+              <div id="obj-plan-preview" style="margin-top:14px;padding:12px;background:var(--surf);border:1px solid var(--bdr);border-radius:8px;font-family:var(--mono);font-size:11px;color:var(--txt2);line-height:1.7"></div>
+              <div style="display:flex;gap:8px;margin-top:12px">
+                <button class="btn-s" style="flex:1;margin:0;text-align:center" onclick="objToggleEdit()">cancel</button>
+                <button class="btn-p" style="flex:1;margin:0" onclick="objSavePlan()">save objective &amp; generate plan</button>
+              </div>
+            </div>
+
+            <!-- ACTIVE OBJECTIVE DISPLAY -->
+            <div id="obj-display" style="padding:16px">
+              <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:center">
+                <div>
+                  <div id="obj-headline" style="font-size:15px;font-weight:600;color:var(--txt);margin-bottom:4px">No objective set</div>
+                  <div id="obj-subline" style="font-size:12px;color:var(--muted);font-family:var(--mono)">Click "edit objective" to define your goal and generate a plan</div>
+                </div>
+                <div style="text-align:right">
+                  <div class="cl" style="margin-bottom:2px">Progress to target</div>
+                  <div id="obj-progress-pct" style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--acc)">—</div>
+                </div>
+              </div>
+              <!-- Progress bar -->
+              <div style="margin-top:12px;height:8px;background:var(--surf2);border-radius:4px;overflow:hidden">
+                <div id="obj-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--acc),var(--acc2,#4ADE80));border-radius:4px;transition:width .4s"></div>
+              </div>
+              <!-- Plan parameters grid -->
+              <div id="obj-plan-grid" style="display:none;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px">
+                <div style="padding:8px 10px;background:var(--surf2);border-radius:6px">
+                  <div class="cl" style="font-size:9px">Max position</div>
+                  <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--txt)" id="plan-maxpos">—</div>
+                </div>
+                <div style="padding:8px 10px;background:var(--surf2);border-radius:6px">
+                  <div class="cl" style="font-size:9px">Stop loss</div>
+                  <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--dng)" id="plan-stop">—</div>
+                </div>
+                <div style="padding:8px 10px;background:var(--surf2);border-radius:6px">
+                  <div class="cl" style="font-size:9px">Cash reserve</div>
+                  <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--acc)" id="plan-reserve">—</div>
+                </div>
+                <div style="padding:8px 10px;background:var(--surf2);border-radius:6px">
+                  <div class="cl" style="font-size:9px">Required return</div>
+                  <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--txt)" id="plan-return">—</div>
+                </div>
+              </div>
+              <div id="obj-plan-narrative" style="display:none;margin-top:12px;padding:10px 14px;background:var(--surf2);border-radius:8px;font-size:12px;color:var(--txt2);line-height:1.6"></div>
+              <div id="obj-feasibility" style="display:none;margin-top:8px;padding:8px 14px;border-radius:8px;font-family:var(--mono);font-size:11px;line-height:1.5"></div>
+            </div>
+          </div>
+
           <!-- PORTFOLIO STATE -->
           <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px">
             <div class="card" style="padding:12px;text-align:center">
               <div class="cl" style="margin-bottom:4px">Capital</div>
-              <div style="font-family:var(--mono);font-size:15px;font-weight:600" id="pm-capital">$20.00</div>
+              <div style="font-family:var(--mono);font-size:15px;font-weight:600" id="pm-capital">$1,000.00</div>
             </div>
             <div class="card" style="padding:12px;text-align:center">
               <div class="cl" style="margin-bottom:4px">Cash</div>
-              <div style="font-family:var(--mono);font-size:15px;font-weight:600;color:var(--acc)" id="pm-cash">$20.00</div>
+              <div style="font-family:var(--mono);font-size:15px;font-weight:600;color:var(--acc)" id="pm-cash">$1,000.00</div>
             </div>
             <div class="card" style="padding:12px;text-align:center">
               <div class="cl" style="margin-bottom:4px">Reserved</div>
@@ -970,7 +1068,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
         <div class="card" style="max-width:440px;padding:14px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <div>
-              <div style="font-family:var(--mono);font-size:16px;font-weight:600;color:var(--acc)" id="settings-version-num" class="app-version">v2.3.2</div>
+              <div style="font-family:var(--mono);font-size:16px;font-weight:600;color:var(--acc)" id="settings-version-num" class="app-version">v2.4.1</div>
               <div style="font-size:12px;color:var(--muted);margin-top:2px">Full Changelog + Version Tracking</div>
             </div>
             <button class="btn-s" style="margin:0;padding:7px 14px;font-size:12px" onclick="showChangelog()">view full changelog</button>
@@ -997,57 +1095,107 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 
 <script>
 // ════════════════════════════════════════
-// sendPrompt POLYFILL
-// Claude.ai injects sendPrompt() when running as an artifact.
-// When deployed to GitHub Pages it doesn't exist — this polyfill
-// copies the prompt to clipboard and shows a toast so the user
-// can paste it into their Claude chat.
+// sendPrompt — STANDALONE MODE
+// On GitHub Pages, Claude.ai doesn't inject sendPrompt().
+// This replacement shows a modal with the prompt ready to copy,
+// so the user can paste it directly into this Claude chat.
 // ════════════════════════════════════════
-if (typeof sendPrompt === 'undefined') {
-  window.sendPrompt = function(text) {
-    const ts = new Date().toISOString();
-    // Derive a short label from the first line of the prompt
-    const label = text.split('\n')[0].slice(0, 80);
+window.sendPrompt = function(text) {
+  const ts = new Date().toISOString();
 
-    // 1. Copy to clipboard
-    const doCopy = (str) => {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(str).catch(() => {
-          const ta = document.createElement('textarea');
-          ta.value = str; ta.style.cssText = 'position:fixed;opacity:0';
-          document.body.appendChild(ta); ta.select();
-          try { document.execCommand('copy'); } catch(e) {} ta.remove();
-        });
-      }
-    };
-    doCopy(text);
+  // Short label = first non-empty line
+  const label = text.split('\n').find(l => l.trim()) || 'Prompt';
 
-    // 2. Log to ChatLog sheet (non-blocking)
-    logToSheet('ChatLog', [ts, 'PROMPT', label, '(awaiting Claude response)', '••••0705', 'auto-logged']);
-
-    // 3. Log to in-app session log
-    addLog('PROMPT', label);
-
-    // 4. Show toast
-    const existing = document.getElementById('sp-toast');
-    if (existing) existing.remove();
-    const toast = document.createElement('div');
-    toast.id = 'sp-toast';
-    toast.style.cssText = [
-      'position:fixed;bottom:28px;left:50%;transform:translateX(-50%)',
-      'background:#0A0F1E;border:1px solid #00D4A8;color:#00D4A8',
-      'padding:12px 22px;border-radius:10px;font-family:monospace;font-size:13px',
-      'z-index:99999;box-shadow:0 4px 24px rgba(0,212,168,.15)',
-      'max-width:88vw;text-align:center;line-height:1.6'
-    ].join(';');
-    toast.innerHTML =
-      '📋 <strong>Prompt copied to clipboard</strong><br>' +
-      '<span style="color:#8892A4;font-size:11px;font-family:monospace">' + label.slice(0,60) + '...</span><br>' +
-      '<span style="color:#8892A4;font-size:11px">Paste into Claude chat → executes via Robinhood MCP</span>';
-    document.body.appendChild(toast);
-    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 6000);
+  // 1. Copy to clipboard (best-effort)
+  let copied = false;
+  const tryCopy = () => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        copied = true;
+        const btn = document.getElementById('spm-copy-btn');
+        if (btn) { btn.textContent = '✓ Copied!'; btn.style.background = 'var(--acc)'; btn.style.color = '#000'; }
+      }).catch(() => fallbackCopy());
+    } else {
+      fallbackCopy();
+    }
   };
-}
+  const fallbackCopy = () => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:-9999px;opacity:0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); copied = true; } catch(e) {}
+    ta.remove();
+    const btn = document.getElementById('spm-copy-btn');
+    if (btn && copied) { btn.textContent = '✓ Copied!'; btn.style.background = 'var(--acc)'; btn.style.color = '#000'; }
+  };
+
+  // 2. Log (non-blocking)
+  if (typeof logToSheet === 'function') logToSheet('ChatLog', [ts, 'PROMPT', label.slice(0,80), '(awaiting Claude response)', '••••0705', 'auto-logged']);
+  if (typeof addLog === 'function') addLog('PROMPT', label.slice(0,80));
+
+  // 3. Show modal — impossible to miss
+  const existing = document.getElementById('spm-overlay');
+  if (existing) existing.remove();
+
+  const preview = text.length > 300 ? text.slice(0, 300) + '\n...' : text;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'spm-overlay';
+  overlay.style.cssText = [
+    'position:fixed;inset:0;background:rgba(0,0,0,.80)',
+    'display:flex;align-items:center;justify-content:center',
+    'z-index:999999;padding:20px;box-sizing:border-box'
+  ].join(';');
+
+  overlay.innerHTML = `
+    <div style="background:#0D1B2A;border:1px solid #00D4A8;border-radius:12px;
+                max-width:600px;width:100%;padding:24px;box-shadow:0 8px 40px rgba(0,212,168,.2)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="font-family:monospace;font-size:13px;font-weight:600;color:#00D4A8;letter-spacing:.5px">
+          📋 PROMPT READY — PASTE INTO CLAUDE CHAT
+        </div>
+        <button id="spm-close-btn" style="background:none;border:1px solid #3A4A5A;color:#8892A4;
+                border-radius:6px;padding:4px 10px;cursor:pointer;font-family:monospace;font-size:11px">
+          ✕ dismiss
+        </button>
+      </div>
+      <div style="font-family:monospace;font-size:11px;color:#8892A4;margin-bottom:10px">
+        ${label.slice(0, 80)}
+      </div>
+      <div style="background:#0A0F1E;border:1px solid #1A2F45;border-radius:8px;
+                  padding:12px;margin-bottom:16px;max-height:140px;overflow-y:auto">
+        <pre style="margin:0;font-family:monospace;font-size:11px;color:#B0BDC8;
+                    white-space:pre-wrap;word-break:break-word">${preview.replace(/</g,'&lt;')}</pre>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button id="spm-copy-btn" style="background:#00D4A820;border:1px solid #00D4A8;color:#00D4A8;
+                padding:10px 20px;border-radius:8px;cursor:pointer;font-family:monospace;
+                font-size:13px;font-weight:600;flex:1;min-width:140px">
+          📋 Copy to Clipboard
+        </button>
+        <div style="font-family:monospace;font-size:11px;color:#8892A4;flex:1;min-width:140px">
+          Then paste it into<br>your Claude chat above →
+        </div>
+      </div>
+      <div style="margin-top:12px;padding:10px;background:#112236;border-radius:6px;
+                  font-family:monospace;font-size:11px;color:#8892A4;text-align:center">
+        Claude will run the analysis using Robinhood MCP + web search,<br>
+        then return JSON you paste into the Import Analysis box below.
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  // Wire buttons
+  document.getElementById('spm-copy-btn').onclick = tryCopy;
+  document.getElementById('spm-close-btn').onclick = () => overlay.remove();
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+  // Auto-copy on open
+  setTimeout(tryCopy, 100);
+};
 
 // ── ERROR LOGGER ─────────────────────────────────────────────
 // Catch unhandled JS errors and show a visible toast + log them
@@ -1959,7 +2107,7 @@ document.getElementById('si1').classList.add('active');
 // VERSION CONTROL
 // ════════════════════════════════════════
 const APP_VERSION = {
-number: 'v2.3.2',
+number: 'v2.4.1',
 date: '2026-06-19',
 label: 'Full Changelog + Version Tracking',
 changes: [
@@ -2116,7 +2264,7 @@ function closeVersionModal() {
   if (m) m.style.display = 'none';
 }
 // ════════════════════════════════════════
-// RISK RULES — never violated
+// RISK RULES — hard ceilings, never exceeded
 // ════════════════════════════════════════
 const RISK = {
   maxEquity:     2,
@@ -2131,12 +2279,36 @@ const RISK = {
   minConfidence: 60,
   maxUncertainty:0.40,
 };
+// ACTIVE_LIMITS — live limits derived from the objective plan.
+// Defaults to RISK; objSavePlan() overrides these, but they are
+// always clamped to RISK as the hard ceiling (plan can be SAFER, never riskier).
+let ACTIVE_LIMITS = {
+  maxEquity:    RISK.maxEquity,
+  maxPosPct:    RISK.maxPosPct,
+  minCashPct:   RISK.minCashPct,
+  stopPct:      0.08,
+};
+// Apply a generated plan to the live limits, clamped to RISK ceilings.
+function applyPlanToLimits(plan) {
+  if (!plan) return;
+  ACTIVE_LIMITS.maxPosPct  = Math.min(plan.maxPosPct / 100, RISK.maxPosPct);   // never riskier than 20%
+  ACTIVE_LIMITS.minCashPct = Math.max(plan.reservePct / 100, RISK.minCashPct); // never less cash than 15%
+  ACTIVE_LIMITS.maxEquity  = Math.min(plan.maxPositions, 5);
+  ACTIVE_LIMITS.stopPct    = plan.stopPct / 100;
+}
+// Load any saved plan into ACTIVE_LIMITS on startup
+function initActiveLimits() {
+  try {
+    const plan = JSON.parse(localStorage.getItem('pt_plan') || 'null');
+    if (plan) applyPlanToLimits(plan);
+  } catch(e) {}
+}
 // ════════════════════════════════════════
 // PORTFOLIO STATE
 // ════════════════════════════════════════
 let pmState = {
-  capital:      20,
-  cash:         20,
+  capital:      1000,
+  cash:         1000,
   positions:    [],
   recHistory:   {},
   lastAnalysis: null,
@@ -2152,9 +2324,19 @@ function pmLoadState() {
   const saved = localStorage.getItem('pm_state');
   if (saved) {
     const s = JSON.parse(saved);
-    pmState.cash      = s.cash      || 20;
+    pmState.cash      = (typeof s.cash === 'number')    ? s.cash    : 1000;
     pmState.positions = s.positions || [];
-    pmState.capital   = s.capital   || 20;
+    pmState.capital   = (typeof s.capital === 'number') ? s.capital : 1000;
+  }
+  // If an objective is set, its starting capital is the source of truth for sizing
+  const obj = (typeof loadObjective === 'function') ? loadObjective() : null;
+  if (obj && obj.start) {
+    const startCap = parseFloat(obj.start);
+    if (startCap > 0) {
+      pmState.capital = startCap;
+      // Only reset cash to capital if no positions are open yet
+      if (!pmState.positions.length) pmState.cash = startCap;
+    }
   }
   pmState.recHistory = JSON.parse(localStorage.getItem('pm_rec_history') || '{}');
 }
@@ -2214,11 +2396,13 @@ SAFETY OVERRIDE: If confidence < 60% or uncertainty > 40%, recommend NOTHING —
 BUFFETT QUALITY CRITERIA: Strong balance sheet, predictable earnings, positive cash flow, reasonable valuation, durable moat, long-term growth.
 INVESTOR CONSENSUS: Simulate Buffett, Lynch, Dalio, Wood, Jones perspectives.`;
 function buildAnalysisPrompt() {
-  const reserve = (pmState.capital * RISK.minCashPct).toFixed(2);
+  const reserve = (pmState.capital * ACTIVE_LIMITS.minCashPct).toFixed(2);
   const deployable = Math.max(0, pmState.cash - parseFloat(reserve)).toFixed(2);
-  const equitySlots = RISK.maxEquity - pmState.positions.filter(p=>p.type!=='crypto').length;
+  const equitySlots = ACTIVE_LIMITS.maxEquity - pmState.positions.filter(p=>p.type!=='crypto').length;
   const cryptoSlots = RISK.maxCrypto - pmState.positions.filter(p=>p.type==='crypto').length;
-  const maxPosition = (pmState.capital * RISK.maxPosPct).toFixed(2);
+  const maxPosition = (pmState.capital * ACTIVE_LIMITS.maxPosPct).toFixed(2);
+  const reservePctLbl = (ACTIVE_LIMITS.minCashPct * 100).toFixed(0);
+  const maxPosPctLbl = (ACTIVE_LIMITS.maxPosPct * 100).toFixed(0);
   const posStr = pmState.positions.length
     ? pmState.positions.map(p=>'• '+p.ticker+' ('+p.type+'): '+p.shares+' shares @ $'+p.entryPrice+' | Target: $'+p.target+' | Stop: $'+p.stop_loss).join('\n')
     : '• None — fully in cash';
@@ -2227,9 +2411,9 @@ function buildAnalysisPrompt() {
 CURRENT PORTFOLIO STATE:
 • Starting Capital: $${pmState.capital}
 • Available Cash: $${pmState.cash.toFixed(2)}
-• Cash Reserve Required: $${reserve} (15%)
+• Cash Reserve Required: $${reserve} (${reservePctLbl}%)
 • Deployable Capital: $${deployable}
-• Max Per Position: $${maxPosition} (20%)
+• Max Per Position: $${maxPosition} (${maxPosPctLbl}%)
 • Equity Slots: ${equitySlots} remaining
 • Crypto Slots: ${cryptoSlots} remaining
 CURRENT POSITIONS:
@@ -2395,7 +2579,7 @@ const scoreColor = finalScore >= 85 ? 'var(--acc)' : finalScore >= 75 ? 'var(--w
 const confColor  = r.confidence >= 80 ? 'var(--acc)' : r.confidence >= 65 ? 'var(--wrn)' : 'var(--dng)';
 const penaltyStr = r.repeat_penalty ? '<span style="color:var(--dng);font-size:10px"> (-15 repeat)</span>' : '';
 const deployed   = pmState.cash < (r.position_size_usd || 4);
-const equityFull = pmState.positions.filter(p=>p.type!=='crypto').length >= RISK.maxEquity && r.type !== 'crypto';
+const equityFull = pmState.positions.filter(p=>p.type!=='crypto').length >= ACTIVE_LIMITS.maxEquity && r.type !== 'crypto';
 const blocked    = deployed || equityFull || pmState.safetyOverride;
 return `<div class="card" style="padding:16px;margin-bottom:12px;border-left:3px solid ${scoreColor}">
 <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
@@ -2506,7 +2690,7 @@ function pmRenderRiskWarnings(warnings) {
 function pmUpdatePortfolioUI() {
   const cap = pmState.capital;
   const cash = pmState.cash;
-  const reserve = cap * RISK.minCashPct;
+  const reserve = cap * ACTIVE_LIMITS.minCashPct;
   const deployable = Math.max(0, cash - reserve);
   const equityCount = pmState.positions.filter(p=>p.type!=='crypto').length;
   const set = (id, v, c) => { const e = document.getElementById(id); if(e){e.textContent=v;if(c)e.style.color=c;} };
@@ -2514,7 +2698,7 @@ function pmUpdatePortfolioUI() {
   set('pm-cash', '$'+cash.toFixed(2), cash > reserve ? 'var(--acc)' : 'var(--dng)');
   set('pm-reserve', '$'+reserve.toFixed(2));
   set('pm-deployable', '$'+deployable.toFixed(2), deployable > 0 ? 'var(--acc)' : 'var(--muted)');
-  set('pm-pos-count', equityCount + ' / ' + RISK.maxEquity);
+  set('pm-pos-count', equityCount + ' / ' + ACTIVE_LIMITS.maxEquity);
 }
 
 // ════════════════════════════════════════
@@ -2523,7 +2707,7 @@ function pmUpdatePortfolioUI() {
 function pmReviewOrder(ticker) {
   const rec = pmState.recommendations.find(r => r.ticker === ticker);
   if (!rec) return;
-  const posSize = (rec.position_size_usd || pmState.capital * RISK.maxPosPct).toFixed(2);
+  const posSize = (rec.position_size_usd || pmState.capital * ACTIVE_LIMITS.maxPosPct).toFixed(2);
   const estShares = (rec.current_price ? parseFloat(posSize) / rec.current_price : 0).toFixed(6);
   const prompt =
     'AI PORTFOLIO MANAGER — ORDER REVIEW REQUEST\n' +
@@ -2706,10 +2890,240 @@ function updateLiveModeUI() {
 // ════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════
+// ════════════════════════════════════════
+// OBJECTIVE + PLAN GENERATOR ENGINE (v2.4.0)
+// Goal → derived risk parameters → strategy plan.
+// Risk limits are NOT hardcoded — they are a function
+// of the active objective and risk tolerance.
+// ════════════════════════════════════════
+
+// Risk tolerance → base parameters. These SCALE with the objective.
+const RISK_PROFILES = {
+  conservative: { maxPosPct: 8,  stopPct: 5,  reservePct: 30, maxPositions: 3, label: 'Conservative' },
+  moderate:     { maxPosPct: 15, stopPct: 8,  reservePct: 15, maxPositions: 4, label: 'Moderate' },
+  aggressive:   { maxPosPct: 25, stopPct: 12, reservePct: 8,  maxPositions: 5, label: 'Aggressive' }
+};
+
+const OBJECTIVE_LABELS = {
+  grow:     'Grow capital',
+  income:   'Generate income',
+  beatspy:  'Beat SPY',
+  btc:      'Accumulate Bitcoin',
+  preserve: 'Capital preservation',
+  custom:   'Custom objective'
+};
+
+function loadObjective() {
+  try { return JSON.parse(localStorage.getItem('pt_objective') || 'null'); }
+  catch(e) { return null; }
+}
+function saveObjective(obj) {
+  localStorage.setItem('pt_objective', JSON.stringify(obj));
+}
+
+// THE CORE: derive a strategy plan from an objective.
+// Returns risk parameters, required return, pacing, and an honest feasibility read.
+function generatePlan(obj) {
+  const base = RISK_PROFILES[obj.risk] || RISK_PROFILES.moderate;
+  const start = parseFloat(obj.start) || 0;
+  const target = parseFloat(obj.target) || 0;
+  const days = parseFloat(obj.timeline) || 1;
+
+  // Required total return to hit target
+  const totalReturn = start > 0 ? ((target - start) / start) * 100 : 0;
+  // Annualized required return
+  const years = days / 365;
+  const annualizedReturn = (start > 0 && years > 0)
+    ? ((Math.pow(target / start, 1 / years) - 1) * 100)
+    : 0;
+
+  // Plan adapts risk params based on objective type + how aggressive the target is
+  let plan = {
+    maxPosPct:   base.maxPosPct,
+    stopPct:     base.stopPct,
+    reservePct:  base.reservePct,
+    maxPositions:base.maxPositions,
+    profile:     obj.risk
+  };
+
+  // Objective-specific adjustments
+  if (obj.type === 'preserve') {
+    plan.maxPosPct = Math.min(plan.maxPosPct, 6);
+    plan.reservePct = Math.max(plan.reservePct, 35);
+    plan.stopPct = Math.min(plan.stopPct, 5);
+  } else if (obj.type === 'income') {
+    plan.reservePct = Math.max(plan.reservePct, 20);
+  } else if (obj.type === 'btc') {
+    plan.maxPosPct = Math.min(plan.maxPosPct + 10, 40); // concentrated crypto
+  }
+
+  // Feasibility assessment — honest about probability, not just working backward
+  let feasibility, feasColor, feasIcon;
+  if (annualizedReturn <= 12) {
+    feasibility = 'Realistic — this annualized return is in line with long-term market averages.';
+    feasColor = 'var(--acc)'; feasIcon = '✓';
+  } else if (annualizedReturn <= 30) {
+    feasibility = 'Ambitious — achievable but requires strong selection and favorable conditions. Above typical market returns.';
+    feasColor = 'var(--wrn)'; feasIcon = '⚠';
+  } else if (annualizedReturn <= 80) {
+    feasibility = 'Aggressive — this return far exceeds market norms. High risk of falling short; expect significant drawdowns.';
+    feasColor = 'var(--wrn)'; feasIcon = '⚠';
+  } else {
+    feasibility = 'Unrealistic on this timeline — no responsible plan can target this return. Consider extending the timeline or lowering the target. The plan below optimizes risk posture but cannot promise the goal.';
+    feasColor = 'var(--dng)'; feasIcon = '✕';
+  }
+
+  plan.totalReturn = totalReturn;
+  plan.annualizedReturn = annualizedReturn;
+  plan.feasibility = feasibility;
+  plan.feasColor = feasColor;
+  plan.feasIcon = feasIcon;
+
+  // Pacing: per-period checkpoint
+  plan.dailyTarget = days > 0 ? totalReturn / days : 0;
+
+  return plan;
+}
+
+function objToggleEdit() {
+  const ed = document.getElementById('obj-editor');
+  if (!ed) return;
+  const showing = ed.style.display !== 'none';
+  ed.style.display = showing ? 'none' : 'block';
+  if (!showing) {
+    // populate from saved objective
+    const obj = loadObjective();
+    if (obj) {
+      document.getElementById('obj-type').value = obj.type || 'grow';
+      document.getElementById('obj-risk').value = obj.risk || 'moderate';
+      document.getElementById('obj-start').value = obj.start || 1000;
+      document.getElementById('obj-target').value = obj.target || 2000;
+      document.getElementById('obj-timeline').value = obj.timeline || 180;
+      document.getElementById('obj-strategy').value = obj.strategy || 'balanced';
+    }
+    objPreviewPlan();
+  }
+}
+
+function readObjectiveForm() {
+  return {
+    type:     document.getElementById('obj-type')?.value || 'grow',
+    risk:     document.getElementById('obj-risk')?.value || 'moderate',
+    start:    document.getElementById('obj-start')?.value || 1000,
+    target:   document.getElementById('obj-target')?.value || 2000,
+    timeline: document.getElementById('obj-timeline')?.value || 180,
+    strategy: document.getElementById('obj-strategy')?.value || 'balanced'
+  };
+}
+
+function objPreviewPlan() {
+  const obj = readObjectiveForm();
+  const plan = generatePlan(obj);
+  const el = document.getElementById('obj-plan-preview');
+  if (!el) return;
+  const startCap = parseFloat(obj.start) || 0;
+  const maxDollar = (startCap * plan.maxPosPct / 100).toFixed(2);
+  el.innerHTML =
+    '<strong style="color:var(--acc)">GENERATED PLAN PREVIEW</strong><br>' +
+    'Max position: ' + plan.maxPosPct + '% ($' + maxDollar + ') · ' +
+    'Stop loss: ' + plan.stopPct + '% · ' +
+    'Cash reserve: ' + plan.reservePct + '% · ' +
+    'Max positions: ' + plan.maxPositions + '<br>' +
+    'Required return: ' + plan.totalReturn.toFixed(1) + '% total (' + plan.annualizedReturn.toFixed(1) + '% annualized)<br>' +
+    '<span style="color:' + plan.feasColor + '">' + plan.feasIcon + ' ' + plan.feasibility + '</span>';
+}
+
+function objSavePlan() {
+  const obj = readObjectiveForm();
+  saveObjective(obj);
+  // Derive plan and push into the LIVE limits the trade engine actually reads
+  const plan = generatePlan(obj);
+  localStorage.setItem('pt_plan', JSON.stringify(plan));
+  applyPlanToLimits(plan);
+  document.getElementById('obj-editor').style.display = 'none';
+  renderObjective();
+  pmUpdatePortfolioUI();
+  if (typeof pmAddLog === 'function') pmAddLog('OBJECTIVE', obj.type.toUpperCase(),
+    'Objective set: ' + OBJECTIVE_LABELS[obj.type] + ' $' + obj.start + '→$' + obj.target + ' / ' + obj.timeline + 'd');
+  if (typeof logToSheet === 'function') logToSheet('GoalProgress', [
+    new Date().toISOString(), 'OBJECTIVE SET',
+    OBJECTIVE_LABELS[obj.type], '$' + obj.start + ' → $' + obj.target,
+    obj.timeline + ' days', plan.maxPosPct + '% max pos', plan.stopPct + '% stop',
+    plan.reservePct + '% reserve', RISK_PROFILES[obj.risk].label, obj.strategy
+  ]);
+}
+
+function renderObjective() {
+  const obj = loadObjective();
+  const headline = document.getElementById('obj-headline');
+  const subline = document.getElementById('obj-subline');
+  const pctEl = document.getElementById('obj-progress-pct');
+  const barEl = document.getElementById('obj-progress-bar');
+  const grid = document.getElementById('obj-plan-grid');
+  const narrative = document.getElementById('obj-plan-narrative');
+  const feas = document.getElementById('obj-feasibility');
+
+  if (!obj) {
+    if (headline) headline.textContent = 'No objective set';
+    if (subline) subline.textContent = 'Click "edit objective" to define your goal and generate a plan';
+    if (pctEl) pctEl.textContent = '—';
+    if (grid) grid.style.display = 'none';
+    if (narrative) narrative.style.display = 'none';
+    if (feas) feas.style.display = 'none';
+    return;
+  }
+
+  const plan = generatePlan(obj);
+  const start = parseFloat(obj.start) || 0;
+  const target = parseFloat(obj.target) || 0;
+  const current = (typeof PORTFOLIO_VAL === 'number') ? PORTFOLIO_VAL : start;
+
+  // Progress = how far from start toward target
+  const progress = (target > start)
+    ? Math.max(0, Math.min(((current - start) / (target - start)) * 100, 100))
+    : 0;
+
+  if (headline) headline.textContent =
+    OBJECTIVE_LABELS[obj.type] + ': $' + Number(start).toLocaleString() + ' → $' + Number(target).toLocaleString();
+  if (subline) subline.textContent =
+    obj.timeline + '-day timeline · ' + RISK_PROFILES[obj.risk].label + ' risk · ' + obj.strategy + ' profile';
+  if (pctEl) pctEl.textContent = progress.toFixed(0) + '%';
+  if (barEl) barEl.style.width = progress + '%';
+
+  if (grid) {
+    grid.style.display = 'grid';
+    const maxDollar = (current * plan.maxPosPct / 100).toFixed(0);
+    document.getElementById('plan-maxpos').textContent = plan.maxPosPct + '% · $' + maxDollar;
+    document.getElementById('plan-stop').textContent = '-' + plan.stopPct + '%';
+    document.getElementById('plan-reserve').textContent = plan.reservePct + '%';
+    document.getElementById('plan-return').textContent = plan.annualizedReturn.toFixed(0) + '%/yr';
+  }
+
+  if (narrative) {
+    narrative.style.display = 'block';
+    const remaining = (target - current).toFixed(0);
+    narrative.innerHTML =
+      '<strong>Plan:</strong> Deploy up to ' + plan.maxPosPct + '% per position across max ' +
+      plan.maxPositions + ' positions, holding ' + plan.reservePct + '% cash in reserve. ' +
+      'Cut any position at -' + plan.stopPct + '%. ' +
+      '$' + Number(remaining).toLocaleString() + ' to go to target.';
+  }
+
+  if (feas) {
+    feas.style.display = 'block';
+    feas.style.background = plan.feasColor === 'var(--dng)' ? 'var(--dng-d)' :
+                            plan.feasColor === 'var(--wrn)' ? 'var(--wrn-d)' : 'var(--acc-d)';
+    feas.style.color = plan.feasColor;
+    feas.innerHTML = plan.feasIcon + ' ' + plan.feasibility;
+  }
+}
+
 function pmInit() {
+  initActiveLimits();
   pmLoadState();
   pmUpdatePortfolioUI();
   pmRenderPositions();
+  renderObjective();
   displayVersion();
   checkVersionUpdate();
 }
@@ -2897,11 +3311,11 @@ function pmAutoExecuteAll() {
 
 // ── LIVE EXECUTE (real order via Claude) ───────────────────────
 function pmLiveExecute(rec) {
-  const posSize   = (rec.position_size_usd || pmState.capital * RISK.maxPosPct).toFixed(2);
+  const posSize   = (rec.position_size_usd || pmState.capital * ACTIVE_LIMITS.maxPosPct).toFixed(2);
   const estShares = (rec.current_price ? parseFloat(posSize) / rec.current_price : 0).toFixed(6);
-  const equityFull = pmState.positions.filter(p=>p.type!=='crypto').length >= RISK.maxEquity;
+  const equityFull = pmState.positions.filter(p=>p.type!=='crypto').length >= ACTIVE_LIMITS.maxEquity;
   if (equityFull && rec.type !== 'crypto') {
-    pmAddStrategyAlert(rec.ticker, 'block', 'Skipped — equity slots full (max ' + RISK.maxEquity + ')');
+    pmAddStrategyAlert(rec.ticker, 'block', 'Skipped — equity slots full (max ' + ACTIVE_LIMITS.maxEquity + ')');
     return;
   }
 
@@ -2946,12 +3360,12 @@ function pmLiveExecute(rec) {
 // ── SIM EXECUTE (paper trade) ──────────────────────────────────
 function pmSimExecute(rec) {
   if (!rec.current_price) return;
-  const posSize = Math.min(rec.position_size_usd || pmState.capital * RISK.maxPosPct, pmSession.simCash - pmState.capital * RISK.minCashPct);
+  const posSize = Math.min(rec.position_size_usd || pmState.capital * ACTIVE_LIMITS.maxPosPct, pmSession.simCash - pmState.capital * ACTIVE_LIMITS.minCashPct);
   if (posSize < 0.50) {
     pmAddStrategyAlert(rec.ticker, 'block', 'SIM: Skipped — insufficient deployable capital');
     return;
   }
-  const equityFull = pmSession.simPositions.filter(p=>p.type!=='crypto').length >= RISK.maxEquity;
+  const equityFull = pmSession.simPositions.filter(p=>p.type!=='crypto').length >= ACTIVE_LIMITS.maxEquity;
   if (equityFull && rec.type !== 'crypto') {
     pmAddStrategyAlert(rec.ticker, 'block', 'SIM: Skipped — equity slots full');
     return;
